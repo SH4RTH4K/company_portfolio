@@ -1,0 +1,939 @@
+﻿============================================================
+24. BUSINESS DIVISION MANAGEMENT
+============================================================
+
+Create BusinessDivision model.
+
+Fields:
+
+id
+
+name_en
+name_bn
+
+slug_en
+slug_bn
+
+short_description_en
+short_description_bn
+
+description_en
+description_bn
+
+icon
+logo
+featured_image
+banner_image
+
+display_order
+is_active
+
+created_at
+updated_at
+deleted_at
+
+
+Seed:
+
+Zero Gravities Technologies
+Zero Gravities Managed IT
+Zero Gravities Tech
+Zero Gravities Commerce
+
+
+============================================================
+25. SERVICE MANAGEMENT
+============================================================
+
+Create dynamic Service module.
+
+Fields:
+
+id
+
+business_division_id
+
+title_en
+title_bn
+
+slug_en
+slug_bn
+
+short_description_en
+short_description_bn
+
+description_en
+description_bn
+
+icon
+
+featured_image
+banner_image
+
+features_en
+features_bn
+
+benefits_en
+benefits_bn
+
+process_en
+process_bn
+
+is_featured
+is_active
+
+display_order
+
+status
+
+published_at
+
+created_at
+updated_at
+deleted_at
+
+
+============================================================
+26. SERVICE DETAIL PAGE
+============================================================
+
+Optional sections:
+
+Hero
+Overview
+Problems We Solve
+Features
+Benefits
+Process
+Technology Stack
+Related Portfolio
+Industries
+FAQ
+CTA
+
+
+Admin must be able to enable/disable applicable sections.
+
+
+============================================================
+27. PORTFOLIO / CASE STUDIES
+============================================================
+
+Create Portfolio module.
+
+Fields:
+
+project_name_en
+project_name_bn
+
+slug_en
+slug_bn
+
+client_name
+
+client_logo
+
+industry_id
+
+project_category_id
+
+project_date
+
+project_url
+
+short_description_en
+short_description_bn
+
+challenge_en
+challenge_bn
+
+solution_en
+solution_bn
+
+results_en
+results_bn
+
+technology_used
+
+featured_image
+gallery
+
+testimonial_en
+testimonial_bn
+
+is_featured
+
+status
+
+display_order
+
+published_at
+
+created_at
+updated_at
+deleted_at
+
+
+============================================================
+28. PORTFOLIO CATEGORIES
+============================================================
+
+Initial categories:
+
+Software
+Web Application
+Website
+Business Automation
+Managed IT
+Infrastructure
+Networking
+Corporate IT
+E-commerce
+Other
+
+
+Categories must be fully manageable from Admin.
+
+
+============================================================
+29. INDUSTRIES
+============================================================
+
+Create Industry module.
+
+Initial examples:
+
+Retail
+Healthcare
+NGO / MFI
+Education
+Distribution
+SME
+Corporate Office
+Real Estate
+Hospitality
+E-commerce
+Service Business
+
+
+Fields:
+
+title_en
+title_bn
+
+slug_en
+slug_bn
+
+short_description_en
+short_description_bn
+
+description_en
+description_bn
+
+icon
+featured_image
+banner_image
+
+display_order
+is_active
+
+created_at
+updated_at
+deleted_at
+
+
+Allow:
+
+Industry â†” Services
+
+Industry â†” Portfolio
+
+
+============================================================
+30. PRODUCT SHOWCASE
+============================================================
+
+Create Product Showcase module.
+
+This is Phase 1 product showcase, not complete e-commerce.
+
+Fields:
+
+product_name_en
+product_name_bn
+
+slug_en
+slug_bn
+
+sku
+
+brand_id
+category_id
+
+short_description_en
+short_description_bn
+
+description_en
+description_bn
+
+specifications
+
+featured_image
+gallery
+
+price
+
+show_price
+
+availability
+
+external_buy_url
+
+request_quote
+
+is_featured
+is_active
+
+display_order
+
+created_at
+updated_at
+deleted_at
+
+
+============================================================
+31. PRODUCT PRICE DISPLAY
+============================================================
+
+Admin can choose:
+
+Show Price
+Hide Price
+
+
+If hidden:
+
+English:
+Request Price
+
+Bangla:
+à¦®à§‚à¦²à§à¦¯ à¦œà¦¾à¦¨à¦¤à§‡ à¦¯à§‹à¦—à¦¾à¦¯à§‹à¦— à¦•à¦°à§à¦¨
+
+
+============================================================
+32. PRODUCT CATEGORY & BRAND
+============================================================
+
+Create:
+
+Product Categories
+Product Brands
+
+
+Examples:
+
+Laptop
+Desktop
+Networking
+Storage
+Accessories
+Printer
+CCTV
+UPS
+Smart Devices
+
+
+Both modules need:
+
+Add
+Edit
+Delete
+Soft Delete
+Display Order
+Active/Inactive
+SEO
+
+
+============================================================
+33. CORPORATE IT SUPPLY PAGE
+============================================================
+
+Create dedicated page.
+
+Content:
+
+Corporate Procurement
+Bulk IT Supply
+Product Sourcing
+Corporate Quotation
+Installation
+Deployment
+Warranty Coordination
+AMC
+After-sales Support
+
+
+CTA:
+
+Request Corporate Quotation
+
+Bangla equivalent required.
+
+
+============================================================
+34. MANAGED IT / AMC PAGE
+============================================================
+
+Sections:
+
+What is Managed IT
+Who Needs It
+Managed IT Services
+Benefits
+Coverage
+Support Model
+Response Model
+AMC Plans
+FAQ
+Custom Proposal
+CTA
+
+
+============================================================
+35. AMC PACKAGE MANAGEMENT
+============================================================
+
+Create AMC Package module.
+
+Suggested initial package names:
+
+Essential
+Business
+Professional
+Enterprise
+
+
+Fields:
+
+name_en
+name_bn
+
+description_en
+description_bn
+
+price
+
+price_text_en
+price_text_bn
+
+billing_cycle
+
+features_en
+features_bn
+
+is_recommended
+display_order
+is_active
+
+
+Support:
+
+Contact for Price
+
+
+============================================================
+36. CLIENT MANAGEMENT
+============================================================
+
+Fields:
+
+name
+logo
+website
+
+description_en
+description_bn
+
+display_order
+is_active
+
+
+Do not create fake clients.
+
+
+============================================================
+37. TESTIMONIAL MANAGEMENT
+============================================================
+
+Fields:
+
+name
+
+designation_en
+designation_bn
+
+company
+
+photo
+company_logo
+
+testimonial_en
+testimonial_bn
+
+rating optional
+
+display_order
+is_active
+
+
+============================================================
+38. PARTNERS / TECHNOLOGY
+============================================================
+
+Create separate module.
+
+Fields:
+
+name
+logo
+website
+
+type:
+Technology
+Brand
+Partner
+
+official_partner
+
+display_order
+is_active
+
+
+Never display "Official Partner" unless:
+
+official_partner = true
+
+
+============================================================
+39. TEAM / MANAGEMENT
+============================================================
+
+Fields:
+
+name
+
+designation_en
+designation_bn
+
+bio_en
+bio_bn
+
+photo
+
+email optional
+
+linkedin optional
+
+display_order
+is_active
+
+
+============================================================
+40. BLOG / INSIGHTS
+============================================================
+
+Create Blog / Insights module.
+
+Categories may include:
+
+Technology
+Software
+Business Automation
+Managed IT
+Cybersecurity
+Corporate IT
+E-commerce
+Company News
+
+
+Post fields:
+
+title_en
+title_bn
+
+slug_en
+slug_bn
+
+excerpt_en
+excerpt_bn
+
+content_en
+content_bn
+
+featured_image
+
+category_id
+
+tags
+
+author_id
+
+status
+
+published_at
+
+created_at
+updated_at
+deleted_at
+
+
+============================================================
+41. SITE SEARCH
+============================================================
+
+Implement bilingual search.
+
+Search across:
+
+Pages
+Services
+Portfolio
+Industries
+Products
+Insights
+
+
+Support:
+
+English
+Bangla Unicode
+
+
+============================================================
+42. CONTACT / LEAD SYSTEM
+============================================================
+
+Create Contact / Lead form.
+
+Fields:
+
+Full Name
+Company Name
+Phone
+Email
+Interested Service
+Budget Range optional
+Subject
+Message
+Language
+Lead Source
+Landing Page
+Referrer
+UTM values
+
+
+============================================================
+43. LEAD STATUSES
+============================================================
+
+Statuses:
+
+New
+Contacted
+Qualified
+Proposal Sent
+Negotiation
+Won
+Lost
+Spam
+
+
+============================================================
+44. LEAD ADMIN PANEL
+============================================================
+
+Admin can:
+
+Search
+Filter
+View
+Assign Staff
+Change Status
+Add Internal Notes
+Export CSV
+Export Excel where practical
+View UTM data
+View referring page
+View landing page
+
+
+============================================================
+45. QUICK INQUIRY FORMS
+============================================================
+
+Create reusable forms:
+
+Request a Solution
+Request Quote
+Request AMC Proposal
+Corporate IT Inquiry
+Product Inquiry
+General Contact
+
+
+============================================================
+46. UTM TRACKING
+============================================================
+
+Store:
+
+utm_source
+utm_medium
+utm_campaign
+utm_term
+utm_content
+
+with leads.
+
+
+============================================================
+47. WHATSAPP / CALL
+============================================================
+
+Admin settings:
+
+Phone
+WhatsApp
+Email
+Support Email
+
+
+Optional frontend floating:
+
+WhatsApp
+Call
+
+
+Each can be independently enabled/disabled.
+
+
+============================================================
+48. SITE SETTINGS
+============================================================
+
+Create centralized Site Settings.
+
+Fields:
+
+Company Name EN
+Company Name BN
+
+Legal Company Name
+
+Tagline EN
+Tagline BN
+
+Logo
+Logo Light
+Logo Dark
+Favicon
+
+Phone
+Alternative Phone
+WhatsApp
+
+Email
+Support Email
+Sales Email
+
+Address EN
+Address BN
+
+Office Hours EN
+Office Hours BN
+
+Facebook
+LinkedIn
+YouTube
+Instagram
+X
+
+Default Language
+Default Theme
+
+Google Maps Embed
+
+Copyright EN
+Copyright BN
+
+
+Do not hardcode these values in templates.
+
+
+============================================================
+49. FULL SEO MANAGEMENT SYSTEM
+============================================================
+
+SEO IS A CORE FEATURE.
+
+Do NOT create only basic:
+
+meta title
+meta description
+
+Build a complete Admin SEO Management System.
+
+
+============================================================
+50. SEO ADMIN MENU
+============================================================
+
+Admin Sidebar:
+
+SEO
+ â”œâ”€â”€ SEO Dashboard
+ â”œâ”€â”€ Global SEO Settings
+ â”œâ”€â”€ SEO Bulk Editor
+ â”œâ”€â”€ Sitemap
+ â”œâ”€â”€ Robots.txt
+ â”œâ”€â”€ Redirects
+ â”œâ”€â”€ 404 Monitor
+ â”œâ”€â”€ Schema Settings
+ â”œâ”€â”€ Analytics & Tracking
+ â””â”€â”€ Search Verification
+
+
+============================================================
+51. GLOBAL SEO SETTINGS
+============================================================
+
+Admin > SEO > Global Settings
+
+
+Fields:
+
+Site Name EN
+Site Name BN
+
+Default Meta Title EN
+Default Meta Title BN
+
+Default Meta Description EN
+Default Meta Description BN
+
+Default Keywords optional
+
+Default OG Image
+
+Default Social Image
+
+Default Robots
+
+Canonical Domain
+
+Organization Name
+
+Organization Alternate Name
+
+Organization Logo
+
+Organization Phone
+
+Organization Email
+
+Address EN
+Address BN
+
+Facebook
+LinkedIn
+YouTube
+Instagram
+X
+
+Google Verification
+
+Bing Verification
+
+Pinterest Verification optional
+
+
+============================================================
+52. SEO DATABASE ARCHITECTURE
+============================================================
+
+Do NOT duplicate 20+ SEO fields in every content table unnecessarily.
+
+Create reusable polymorphic SEO architecture.
+
+Recommended:
+
+seo_meta
+
+Fields:
+
+id
+
+seoable_type
+seoable_id
+
+seo_title_en
+seo_title_bn
+
+seo_description_en
+seo_description_bn
+
+seo_keywords_en
+seo_keywords_bn
+
+focus_keyword_en
+focus_keyword_bn
+
+canonical_url_en
+canonical_url_bn
+
+og_title_en
+og_title_bn
+
+og_description_en
+og_description_bn
+
+og_image
+
+twitter_title_en
+twitter_title_bn
+
+twitter_description_en
+twitter_description_bn
+
+twitter_image
+
+twitter_card
+
+robots_index
+robots_follow
+robots_noarchive
+robots_nosnippet
+robots_noimageindex
+
+schema_type
+custom_schema_json
+
+breadcrumb_title_en
+breadcrumb_title_bn
+
+sitemap_include
+sitemap_priority
+sitemap_change_frequency
+
+seo_score_en
+seo_score_bn
+
+created_at
+updated_at
+
+
+Use morphOne / morphTo relationship.
+
+
+============================================================
+53.
