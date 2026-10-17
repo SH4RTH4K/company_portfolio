@@ -243,6 +243,7 @@
                 ['id' => 'brand-settings', 'icon' => 'bi-image', 'label' => 'Brand & Logo'],
                 ['id' => 'social-settings', 'icon' => 'bi-share', 'label' => 'Social Links'],
             ];
+            $isSuperAdmin = auth()->user()?->isSuperAdmin() ?? false;
         @endphp
         <ul class="nav nav-pills flex-column mb-auto">
             <li class="nav-item">
@@ -343,68 +344,77 @@
                     <i class="bi bi-graph-up-arrow me-2"></i> SEO Dashboard
                 </a>
             </li>
-            <li class="nav-item">
-                <a href="{{ route('admin.seo.robots') }}" class="nav-link {{ request()->routeIs('admin.seo.robots') ? 'active' : '' }}">
-                    <i class="bi bi-robot me-2"></i> Robots.txt
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ route('admin.seo.scripts') }}" class="nav-link {{ request()->routeIs('admin.seo.scripts') ? 'active' : '' }}">
-                    <i class="bi bi-code-slash me-2"></i> Global Scripts
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ route('admin.redirects.index') }}" class="nav-link {{ request()->routeIs('admin.redirects.*') ? 'active' : '' }}">
-                    <i class="bi bi-sign-turn-right me-2"></i> Redirects
-                </a>
-            </li>
+            @if($isSuperAdmin)
+                <li class="nav-item">
+                    <a href="{{ route('admin.seo.robots') }}" class="nav-link {{ request()->routeIs('admin.seo.robots') ? 'active' : '' }}">
+                        <i class="bi bi-robot me-2"></i> Robots.txt
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('admin.seo.scripts') }}" class="nav-link {{ request()->routeIs('admin.seo.scripts') ? 'active' : '' }}">
+                        <i class="bi bi-code-slash me-2"></i> Global Scripts
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('admin.redirects.index') }}" class="nav-link {{ request()->routeIs('admin.redirects.*') ? 'active' : '' }}">
+                        <i class="bi bi-sign-turn-right me-2"></i> Redirects
+                    </a>
+                </li>
+            @endif
             <li class="nav-item">
                 <a href="{{ route('admin.not-found-logs.index') }}" class="nav-link {{ request()->routeIs('admin.not-found-logs.*') ? 'active' : '' }}">
                     <i class="bi bi-exclamation-triangle me-2"></i> 404 Monitor
                 </a>
             </li>
 
-            <li class="nav-item mt-3 mb-1 text-white-50 small text-uppercase fw-bold px-3">System</li>
-            <li class="nav-item">
-                <a href="{{ route('admin.users.index') }}" class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
-                    <i class="bi bi-person-badge-fill me-2"></i> Users
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ route('admin.roles.index') }}" class="nav-link {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}">
-                    <i class="bi bi-shield-lock me-2"></i> Roles
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ route('admin.audit-logs.index') }}" class="nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}">
-                    <i class="bi bi-clock-history me-2"></i> Audit Logs
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ route('admin.recycle-bin.index') }}" class="nav-link {{ request()->routeIs('admin.recycle-bin.*') ? 'active' : '' }}">
-                    <i class="bi bi-trash3 me-2"></i> Recycle Bin
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ route('admin.cache.index') }}" class="nav-link {{ request()->routeIs('admin.cache.*') ? 'active' : '' }}">
-                    <i class="bi bi-hdd-network me-2"></i> Cache Management
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ route('admin.settings.index') }}" class="nav-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
-                    <i class="bi bi-gear me-2"></i> Settings
-                </a>
-                @if(request()->routeIs('admin.settings.*'))
-                    <div class="sidebar-subnav" aria-label="Settings sections">
-                        @foreach($settingsSections as $settingsSection)
-                            <a href="{{ route('admin.settings.index') }}#{{ $settingsSection['id'] }}" class="sidebar-subnav-link">
-                                <i class="bi {{ $settingsSection['icon'] }}"></i>
-                                <span>{{ $settingsSection['label'] }}</span>
-                            </a>
-                        @endforeach
-                    </div>
-                @endif
-            </li>
+            @if($isSuperAdmin)
+                <li class="nav-item mt-3 mb-1 text-white-50 small text-uppercase fw-bold px-3">System</li>
+                <li class="nav-item">
+                    <a href="{{ route('admin.users.index') }}" class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+                        <i class="bi bi-person-badge-fill me-2"></i> Users
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('admin.roles.index') }}" class="nav-link {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}">
+                        <i class="bi bi-shield-lock me-2"></i> Roles
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('admin.audit-logs.index') }}" class="nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}">
+                        <i class="bi bi-clock-history me-2"></i> Audit Logs
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('admin.recycle-bin.index') }}" class="nav-link {{ request()->routeIs('admin.recycle-bin.*') ? 'active' : '' }}">
+                        <i class="bi bi-trash3 me-2"></i> Recycle Bin
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('admin.cache.index') }}" class="nav-link {{ request()->routeIs('admin.cache.*') ? 'active' : '' }}">
+                        <i class="bi bi-hdd-network me-2"></i> Cache Management
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('admin.system-health.index') }}" class="nav-link {{ request()->routeIs('admin.system-health.*') ? 'active' : '' }}">
+                        <i class="bi bi-heart-pulse me-2"></i> System Health &amp; Backups
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('admin.settings.index') }}" class="nav-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
+                        <i class="bi bi-gear me-2"></i> Settings
+                    </a>
+                    @if(request()->routeIs('admin.settings.*'))
+                        <div class="sidebar-subnav" aria-label="Settings sections">
+                            @foreach($settingsSections as $settingsSection)
+                                <a href="{{ route('admin.settings.index') }}#{{ $settingsSection['id'] }}" class="sidebar-subnav-link">
+                                    <i class="bi {{ $settingsSection['icon'] }}"></i>
+                                    <span>{{ $settingsSection['label'] }}</span>
+                                </a>
+                            @endforeach
+                        </div>
+                    @endif
+                </li>
+            @endif
             <!-- Add other menu items here as needed -->
         </ul>
         

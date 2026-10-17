@@ -44,6 +44,25 @@ class AdminUsernameLoginTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_inactive_admin_cannot_login(): void
+    {
+        User::factory()->create([
+            'username' => 'inactive_admin',
+            'password' => Hash::make('secret-password'),
+            'is_active' => false,
+        ]);
+
+        $this->post(route('admin.login'), [
+            'username' => 'inactive_admin',
+            'password' => 'secret-password',
+        ])
+            ->assertSessionHasErrors([
+                'username' => 'The provided credentials do not match our records.',
+            ]);
+
+        $this->assertGuest();
+    }
+
     public function test_admin_can_create_user_with_login_username(): void
     {
         $admin = User::factory()->create([

@@ -38,7 +38,7 @@ class HandleSeoRequests
 
         $response = $next($request);
 
-        if ($response->status() == 404 && $this->tableExists('not_found_logs') && ! $request->is('admin/*') && ! $request->is('build/*') && ! $request->ajax()) {
+        if ($response->getStatusCode() === 404 && $this->tableExists('not_found_logs') && ! $request->is('admin/*') && ! $request->is('build/*') && ! $request->ajax()) {
             $url = $request->fullUrl();
 
             $url = substr($url, 0, 700);

@@ -25,6 +25,7 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SeoController;
 use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\SiteSettingController;
+use App\Http\Controllers\Admin\SystemHealthController;
 use App\Http\Controllers\Admin\TeamController;
 use App\Http\Controllers\Admin\TestimonialController;
 use App\Http\Controllers\Admin\UserController;
@@ -41,7 +42,7 @@ Route::prefix('admin')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
     Route::post('logout', [AuthController::class, 'logout'])->name('admin.logout');
 
-    Route::middleware('auth')->name('admin.')->group(function () {
+    Route::middleware(['auth', 'admin'])->name('admin.')->group(function () {
         Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('homepage-hero', [HomepageHeroController::class, 'index'])->name('homepage-hero.index');
         Route::post('homepage-hero', [HomepageHeroController::class, 'update'])->name('homepage-hero.update');
@@ -69,34 +70,61 @@ Route::prefix('admin')->group(function () {
 
         // SEO Routes
         Route::get('seo/dashboard', [SeoController::class, 'index'])->name('seo.dashboard');
-        Route::get('seo/robots', [SeoController::class, 'robots'])->name('seo.robots');
-        Route::post('seo/robots', [SeoController::class, 'updateRobots'])->name('seo.robots.update');
-        Route::get('seo/scripts', [SeoController::class, 'globalScripts'])->name('seo.scripts');
-        Route::post('seo/scripts', [SeoController::class, 'updateGlobalScripts'])->name('seo.scripts.update');
-
-        Route::resource('redirects', RedirectController::class)->except('show');
         Route::get('not-found-logs', [NotFoundLogController::class, 'index'])->name('not-found-logs.index');
         Route::post('not-found-logs/clear', [NotFoundLogController::class, 'clear'])->name('not-found-logs.clear');
         Route::delete('not-found-logs/{notFoundLog}', [NotFoundLogController::class, 'destroy'])->name('not-found-logs.destroy');
 
-        Route::resource('users', UserController::class);
-        Route::resource('roles', RoleController::class);
-        Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
-        Route::post('audit-logs/clear', [AuditLogController::class, 'clear'])->name('audit-logs.clear');
+        Route::middleware('role:super_admin')->group(function () {
+            Route::get('seo/robots', [SeoController::class, 'robots'])->name('seo.robots');
+            Route::post('seo/robots', [SeoController::class, 'updateRobots'])->name('seo.robots.update');
+            Route::get('seo/scripts', [SeoController::class, 'globalScripts'])->name('seo.scripts');
+            Route::post('seo/scripts', [SeoController::class, 'updateGlobalScripts'])->name('seo.scripts.update');
 
-        // Recycle Bin
-        Route::get('recycle-bin', [RecycleBinController::class, 'index'])->name('recycle-bin.index');
-        Route::post('recycle-bin/restore', [RecycleBinController::class, 'restore'])->name('recycle-bin.restore');
-        Route::delete('recycle-bin/destroy', [RecycleBinController::class, 'destroy'])->name('recycle-bin.destroy');
+            Route::resource('redirects', RedirectController::class)->except('show');
 
-        // Cache Management
-        Route::get('cache', [CacheController::class, 'index'])->name('cache.index');
-        Route::post('cache/clear', [CacheController::class, 'clear'])->name('cache.clear');
+            Route::resource('users', UserController::class);
+            Route::resource('roles', RoleController::class);
+            Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+            Route::post('audit-logs/clear', [AuditLogController::class, 'clear'])->name('audit-logs.clear');
 
-        Route::get('settings', [SiteSettingController::class, 'index'])->name('settings.index');
-        Route::post('settings', [SiteSettingController::class, 'update'])->name('settings.update');
+            // Recycle Bin
+            Route::get('recycle-bin', [RecycleBinController::class, 'index'])->name('recycle-bin.index');
+            Route::post('recycle-bin/restore', [RecycleBinController::class, 'restore'])->name('recycle-bin.restore');
+            Route::delete('recycle-bin/destroy', [RecycleBinController::class, 'destroy'])->name('recycle-bin.destroy');
+
+            // Cache Management
+            Route::get('cache', [CacheController::class, 'index'])->name('cache.index');
+            Route::post('cache/clear', [CacheController::class, 'clear'])->name('cache.clear');
+
+            Route::get('settings', [SiteSettingController::class, 'index'])->name('settings.index');
+            Route::post('settings', [SiteSettingController::class, 'update'])->name('settings.update');
+        });
     });
 });
+
+Route::prefix('system-health')
+    ->name('admin.system-health.')
+    ->middleware(['auth', 'admin', 'role:super_admin'])
+    ->group(function () {
+        Route::get('/', [SystemHealthController::class, 'index'])->name('index');
+        Route::post('backups/{type}', [SystemHealthController::class, 'createBackup'])
+            ->where('type', 'database|media|full')
+            ->name('backups.create');
+        Route::get('backups/{backupId}/download', [SystemHealthController::class, 'download'])
+            ->whereNumber('backupId')
+            ->name('backups.download');
+        Route::get('backups/{backupId}/phpmyadmin', [SystemHealthController::class, 'downloadPhpMyAdminSql'])
+            ->whereNumber('backupId')
+            ->name('backups.phpmyadmin');
+        Route::delete('backups/{backupId}', [SystemHealthController::class, 'delete'])
+            ->whereNumber('backupId')
+            ->name('backups.delete');
+        Route::post('restores/{type}', [SystemHealthController::class, 'restore'])
+            ->where('type', 'database|media|full')
+            ->name('restore');
+        Route::post('cache/clear', [SystemHealthController::class, 'clearCache'])->name('cache.clear');
+        Route::post('migrations/run', [SystemHealthController::class, 'runMigrations'])->name('migrations.run');
+    });
 
 // Public SEO Routes
 Route::get('/robots.txt', [PublicSeoController::class, 'robots']);

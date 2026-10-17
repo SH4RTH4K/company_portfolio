@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\EnsureAdminAccess;
+use App\Http\Middleware\EnsureRole;
 use App\Http\Middleware\HandleSeoRequests;
 use App\Http\Middleware\ShowDevelopmentModePage;
 use Illuminate\Foundation\Application;
@@ -14,6 +16,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->alias([
+            'admin' => EnsureAdminAccess::class,
+            'role' => EnsureRole::class,
+        ]);
+
         $middleware->redirectGuestsTo(fn (Request $request) => route('admin.login'));
         $middleware->append(HandleSeoRequests::class);
         $middleware->append(ShowDevelopmentModePage::class);

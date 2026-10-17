@@ -19,7 +19,9 @@ class SiteSettingsTest extends TestCase
     {
         Storage::fake('public');
 
-        $admin = User::factory()->create();
+        $admin = User::factory()->create([
+            'role' => 'super_admin',
+        ]);
 
         $this->actingAs($admin)
             ->post(route('admin.settings.update'), [
@@ -44,7 +46,9 @@ class SiteSettingsTest extends TestCase
     {
         Storage::fake('public');
 
-        $admin = User::factory()->create();
+        $admin = User::factory()->create([
+            'role' => 'super_admin',
+        ]);
         $path = UploadedFile::fake()->image('logo.png', 400, 120)->store('brand-assets', 'public');
 
         SiteSetting::create([
@@ -66,7 +70,9 @@ class SiteSettingsTest extends TestCase
 
     public function test_admin_can_update_logo_display_customization(): void
     {
-        $admin = User::factory()->create();
+        $admin = User::factory()->create([
+            'role' => 'super_admin',
+        ]);
 
         $this->actingAs($admin)
             ->post(route('admin.settings.update'), [
@@ -119,7 +125,9 @@ class SiteSettingsTest extends TestCase
 
     public function test_transparent_logo_background_overrides_color_picker_value(): void
     {
-        $admin = User::factory()->create();
+        $admin = User::factory()->create([
+            'role' => 'super_admin',
+        ]);
 
         $this->actingAs($admin)
             ->post(route('admin.settings.update'), [
@@ -135,7 +143,9 @@ class SiteSettingsTest extends TestCase
 
     public function test_transparent_text_logo_icon_background_overrides_color_picker_value(): void
     {
-        $admin = User::factory()->create();
+        $admin = User::factory()->create([
+            'role' => 'super_admin',
+        ]);
 
         $this->actingAs($admin)
             ->post(route('admin.settings.update'), [
@@ -151,7 +161,9 @@ class SiteSettingsTest extends TestCase
 
     public function test_admin_can_update_development_mode_page_settings(): void
     {
-        $admin = User::factory()->create();
+        $admin = User::factory()->create([
+            'role' => 'super_admin',
+        ]);
 
         $this->actingAs($admin)
             ->post(route('admin.settings.update'), [
@@ -186,7 +198,9 @@ class SiteSettingsTest extends TestCase
 
     public function test_admin_can_manage_email_integration_from_settings(): void
     {
-        $admin = User::factory()->create();
+        $admin = User::factory()->create([
+            'role' => 'super_admin',
+        ]);
 
         $this->actingAs($admin)
             ->post(route('admin.settings.update'), [
@@ -220,7 +234,9 @@ class SiteSettingsTest extends TestCase
 
     public function test_blank_email_integration_password_keeps_existing_saved_password(): void
     {
-        $admin = User::factory()->create();
+        $admin = User::factory()->create([
+            'role' => 'super_admin',
+        ]);
         $storedPassword = Crypt::encryptString('existing-password');
 
         SiteSetting::create([
@@ -248,7 +264,9 @@ class SiteSettingsTest extends TestCase
 
     public function test_admin_can_clear_saved_email_integration_password(): void
     {
-        $admin = User::factory()->create();
+        $admin = User::factory()->create([
+            'role' => 'super_admin',
+        ]);
 
         SiteSetting::create([
             'key' => 'mail_password',
@@ -304,7 +322,9 @@ class SiteSettingsTest extends TestCase
             'value_en' => '1',
         ]);
 
-        $admin = User::factory()->create();
+        $admin = User::factory()->create([
+            'role' => 'super_admin',
+        ]);
 
         $this->actingAs($admin)
             ->get(route('admin.settings.index'))
@@ -314,7 +334,9 @@ class SiteSettingsTest extends TestCase
 
     public function test_settings_page_groups_controls_into_clear_sections(): void
     {
-        $admin = User::factory()->create();
+        $admin = User::factory()->create([
+            'role' => 'super_admin',
+        ]);
 
         $this->actingAs($admin)
             ->get(route('admin.settings.index'))
@@ -342,7 +364,9 @@ class SiteSettingsTest extends TestCase
             ->assertOk()
             ->assertSee('/storage/brand-assets/admin-favicon.png', false);
 
-        $admin = User::factory()->create();
+        $admin = User::factory()->create([
+            'role' => 'super_admin',
+        ]);
 
         $this->actingAs($admin)
             ->get(route('admin.settings.index'))

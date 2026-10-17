@@ -42,6 +42,10 @@ class UserController extends Controller
             'password' => 'required|string|min:8|confirmed',
         ]);
 
+        if ($response = $this->ensureCanAssignSuperAdmin($request, $validated['role'])) {
+            return $response;
+        }
+
         $validated['password'] = Hash::make($validated['password']);
         $validated['is_active'] = $request->has('is_active');
 
@@ -81,6 +85,14 @@ class UserController extends Controller
             'password' => 'nullable|string|min:8|confirmed',
         ]);
 
+        if ($response = $this->ensureCanAssignSuperAdmin($request, $validated['role'])) {
+            return $response;
+        }
+
+        if ($response = $this->ensureLastActiveSuperAdminIsPreserved($request, $user, $validated['role'])) {
+            return $response;
+        }
+
         if (! empty($validated['password'])) {
             $validated['password'] = Hash::make($validated['password']);
         } else {
@@ -96,6 +108,10 @@ class UserController extends Controller
 
     public function destroy(User $user): RedirectResponse
     {
+        if ($this->isLastActiveSuperAdmin($user)) {
+            return redirect()->back()->with('error', 'You cannot delete the last remaining active super administrator.');
+        }
+
         if ($user->id === auth()->id()) {
             return redirect()->back()->with('error', 'You cannot delete your own account.');
         }
@@ -108,5 +124,47 @@ class UserController extends Controller
     private function normalizedUsername(mixed $value): string
     {
         return str((string) $value)->trim()->lower()->toString();
+    }
+
+    private function ensureCanAssignSuperAdmin(Request $request, string $role): ?RedirectResponse
+    {
+        if ($role !== 'super_admin' || $request->user()?->isSuperAdmin()) {
+            return null;
+        }
+
+        return redirect()
+            ->back()
+            ->withInput()
+            ->with('error', 'Only a super administrator may assign the super administrator role.');
+    }
+
+    private function ensureLastActiveSuperAdminIsPreserved(Request $request, User $user, string $role): ?RedirectResponse
+    {
+        if (! $this->isLastActiveSuperAdmin($user)) {
+            return null;
+        }
+
+        if (! $request->has('is_active')) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'You cannot deactivate the last remaining active super administrator.');
+        }
+
+        if ($role !== 'super_admin') {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'You cannot demote the last remaining active super administrator.');
+        }
+
+        return null;
+    }
+
+    private function isLastActiveSuperAdmin(User $user): bool
+    {
+        return $user->role === 'super_admin'
+            && $user->is_active === true
+            && User::where('role', 'super_admin')->where('is_active', true)->count() <= 1;
     }
 }
