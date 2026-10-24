@@ -38,6 +38,7 @@ class SiteSettingController extends Controller
             'default_language' => ['nullable', 'in:en,bn'],
             'menu_visibility' => ['sometimes', 'array:'.implode(',', array_keys(SiteSetting::NAVIGATION_ITEMS))],
             'menu_visibility.*' => ['required', 'boolean'],
+            'settings_section' => ['nullable', 'in:company-settings,navigation-settings,email-settings,language-settings,development-settings,brand-settings,social-settings'],
             'development_mode_enabled' => ['nullable', 'boolean'],
             'development_mode_badge' => ['nullable', 'string', 'max:50'],
             'development_mode_title' => ['nullable', 'string', 'max:100'],
@@ -120,6 +121,7 @@ class SiteSettingController extends Controller
             'remove_favicon',
             'remove_apple_touch_icon',
             'remove_default_og_image',
+            'settings_section',
             'logo_background_transparent',
             'text_logo_icon_background_transparent',
             'development_mode_enabled',
@@ -158,7 +160,10 @@ class SiteSettingController extends Controller
 
         Cache::forget('site_settings');
 
-        return redirect()->back()->with('success', 'Settings updated successfully.');
+        $settingsSection = $validated['settings_section'] ?? 'company-settings';
+
+        return redirect()->to(route('admin.settings.index').'#'.$settingsSection)
+            ->with('success', 'Settings updated successfully.');
     }
 
     private function updateMailPassword(Request $request): void

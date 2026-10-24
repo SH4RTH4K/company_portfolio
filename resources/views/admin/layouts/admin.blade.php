@@ -107,12 +107,19 @@
             background-color: rgba(255,255,255,0.08);
             color: #fff;
         }
+        .sidebar-subnav-link.active {
+            background-color: rgba(255,255,255,0.1);
+            color: #fff;
+        }
         .sidebar-subnav-link i {
             color: #e0e1dd;
             flex: 0 0 1.25rem;
             font-size: 1rem;
             text-align: center;
             width: 1.25rem;
+        }
+        .sidebar-subnav-link.active i {
+            color: #fff;
         }
         .content-area {
             flex-grow: 1;
@@ -237,7 +244,7 @@
         @php
             $settingsSections = [
                 ['id' => 'company-settings', 'icon' => 'bi-building', 'label' => 'Company & Contact'],
-                ['id' => 'navigation-settings', 'icon' => 'bi-list', 'label' => 'Navigation'],
+                ['id' => 'navigation-settings', 'icon' => 'bi-toggles', 'label' => 'Menu Visibility'],
                 ['id' => 'email-settings', 'icon' => 'bi-envelope-at', 'label' => 'Email Integration'],
                 ['id' => 'language-settings', 'icon' => 'bi-translate', 'label' => 'Language & Theme'],
                 ['id' => 'development-settings', 'icon' => 'bi-code-square', 'label' => 'Development Mode'],
@@ -406,18 +413,13 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="{{ route('admin.settings.index') }}#navigation-settings" class="nav-link">
-                        <i class="bi bi-toggles me-2"></i> Menu Visibility
-                    </a>
-                </li>
-                <li class="nav-item">
                     <a href="{{ route('admin.settings.index') }}" class="nav-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
                         <i class="bi bi-gear me-2"></i> Settings
                     </a>
                     @if(request()->routeIs('admin.settings.*'))
                         <div class="sidebar-subnav" aria-label="Settings sections">
                             @foreach($settingsSections as $settingsSection)
-                                <a href="{{ route('admin.settings.index') }}#{{ $settingsSection['id'] }}" class="sidebar-subnav-link">
+                                <a href="{{ route('admin.settings.index') }}#{{ $settingsSection['id'] }}" class="sidebar-subnav-link" data-settings-section-link="{{ $settingsSection['id'] }}">
                                     <i class="bi {{ $settingsSection['icon'] }}"></i>
                                     <span>{{ $settingsSection['label'] }}</span>
                                 </a>

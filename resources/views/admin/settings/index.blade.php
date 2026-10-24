@@ -25,6 +25,10 @@
         padding: 1.25rem;
     }
 
+    .settings-section[hidden] {
+        display: none !important;
+    }
+
     .settings-section-header {
         align-items: flex-start;
         border-bottom: 1px solid var(--settings-border);
@@ -78,6 +82,7 @@
 <div class="settings-shell">
     <form action="{{ route('admin.settings.update') }}" method="POST" enctype="multipart/form-data">
         @csrf
+        <input type="hidden" name="settings_section" value="{{ old('settings_section', 'company-settings') }}">
 
         <div class="settings-hero mb-4">
             <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
@@ -661,7 +666,7 @@
                 <div class="settings-savebar">
                     <div>
                         <div class="fw-bold">Ready to apply changes?</div>
-                        <div class="small text-muted">This saves every section on the settings page.</div>
+                        <div class="small text-muted">Save your settings changes.</div>
                     </div>
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-check2-circle me-1"></i> Save Settings
@@ -670,4 +675,53 @@
         </div>
     </form>
 </div>
+<script>
+    (() => {
+        const settingsForm = document.querySelector('.settings-shell form');
+        const settingsSections = Array.from(settingsForm?.querySelectorAll('.settings-section') ?? []);
+        const settingsSectionInput = settingsForm?.querySelector('[name="settings_section"]');
+        const settingsSectionLinks = Array.from(document.querySelectorAll('.sidebar-subnav-link'));
+
+        if (!settingsForm || !settingsSectionInput || settingsSections.length === 0) {
+            return;
+        }
+
+        const settingsSectionIds = new Set(settingsSections.map((section) => section.id));
+
+        const showSettingsSection = (sectionId) => {
+            const selectedSection = settingsSections.find((section) => section.id === sectionId) ?? settingsSections[0];
+
+            settingsSections.forEach((section) => {
+                section.hidden = section !== selectedSection;
+            });
+
+            settingsSectionInput.value = selectedSection.id;
+
+            settingsSectionLinks.forEach((link) => {
+                const isSelected = link.dataset.settingsSectionLink === selectedSection.id;
+
+                link.classList.toggle('active', isSelected);
+
+                if (isSelected) {
+                    link.setAttribute('aria-current', 'page');
+                } else {
+                    link.removeAttribute('aria-current');
+                }
+            });
+        };
+
+        const invalidSection = settingsSections.find((section) => section.querySelector('.is-invalid'))?.id;
+        const requestedSection = window.location.hash.slice(1);
+
+        showSettingsSection(
+            settingsSectionIds.has(requestedSection)
+                ? requestedSection
+                : (invalidSection ?? settingsSectionInput.value)
+        );
+
+        window.addEventListener('hashchange', () => {
+            showSettingsSection(window.location.hash.slice(1));
+        });
+    })();
+</script>
 @endsection
