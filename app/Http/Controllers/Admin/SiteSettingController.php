@@ -18,8 +18,9 @@ class SiteSettingController extends Controller
         $settings = SiteSetting::pluck('value_en', 'key')->toArray();
         $settingsBn = SiteSetting::pluck('value_bn', 'key')->toArray();
         $mailPasswordConfigured = app(MailConfiguration::class)->passwordIsConfigured();
+        $navigationItems = SiteSetting::NAVIGATION_ITEMS;
 
-        return view('admin.settings.index', compact('mailPasswordConfigured', 'settings', 'settingsBn'));
+        return view('admin.settings.index', compact('mailPasswordConfigured', 'navigationItems', 'settings', 'settingsBn'));
     }
 
     public function update(Request $request): RedirectResponse
@@ -35,6 +36,8 @@ class SiteSettingController extends Controller
             'address.en' => ['nullable', 'string', 'max:1000'],
             'address.bn' => ['nullable', 'string', 'max:1000'],
             'default_language' => ['nullable', 'in:en,bn'],
+            'menu_visibility' => ['sometimes', 'array:'.implode(',', array_keys(SiteSetting::NAVIGATION_ITEMS))],
+            'menu_visibility.*' => ['required', 'boolean'],
             'development_mode_enabled' => ['nullable', 'boolean'],
             'development_mode_badge' => ['nullable', 'string', 'max:50'],
             'development_mode_title' => ['nullable', 'string', 'max:100'],
@@ -120,11 +123,16 @@ class SiteSettingController extends Controller
             'logo_background_transparent',
             'text_logo_icon_background_transparent',
             'development_mode_enabled',
+            'menu_visibility',
             'mail_password',
             'remove_mail_password'
         )->all();
 
         $data['development_mode_enabled'] = $request->boolean('development_mode_enabled') ? '1' : '0';
+
+        foreach ($validated['menu_visibility'] ?? [] as $item => $isVisible) {
+            $data['menu_'.$item.'_visible'] = $isVisible ? '1' : '0';
+        }
 
         if ($request->boolean('logo_background_transparent')) {
             $data['logo_background_color'] = 'transparent';

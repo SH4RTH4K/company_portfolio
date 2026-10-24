@@ -237,6 +237,7 @@
         @php
             $settingsSections = [
                 ['id' => 'company-settings', 'icon' => 'bi-building', 'label' => 'Company & Contact'],
+                ['id' => 'navigation-settings', 'icon' => 'bi-list', 'label' => 'Navigation'],
                 ['id' => 'email-settings', 'icon' => 'bi-envelope-at', 'label' => 'Email Integration'],
                 ['id' => 'language-settings', 'icon' => 'bi-translate', 'label' => 'Language & Theme'],
                 ['id' => 'development-settings', 'icon' => 'bi-code-square', 'label' => 'Development Mode'],
@@ -397,6 +398,11 @@
                 <li class="nav-item">
                     <a href="{{ route('admin.system-health.index') }}" class="nav-link {{ request()->routeIs('admin.system-health.*') ? 'active' : '' }}">
                         <i class="bi bi-heart-pulse me-2"></i> System Health &amp; Backups
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('admin.git-repository.index') }}" class="nav-link {{ request()->routeIs('admin.git-repository.*') ? 'active' : '' }}">
+                        <i class="bi bi-git me-2"></i> Git Repository &amp; Deployment
                     </a>
                 </li>
                 <li class="nav-item">

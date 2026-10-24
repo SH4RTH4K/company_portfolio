@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\CacheController;
 use App\Http\Controllers\Admin\ClientController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FaqController;
+use App\Http\Controllers\Admin\GitRepositoryController;
 use App\Http\Controllers\Admin\HomepageHeroController;
 use App\Http\Controllers\Admin\IndustryController;
 use App\Http\Controllers\Admin\LeadController;
@@ -101,6 +102,31 @@ Route::prefix('admin')->group(function () {
         });
     });
 });
+
+Route::prefix('admin/system/git-repository')
+    ->name('admin.git-repository.')
+    ->middleware(['auth', 'admin', 'role:super_admin'])
+    ->group(function () {
+        Route::get('/', [GitRepositoryController::class, 'index'])->name('index');
+        Route::get('{deployment}/download', [GitRepositoryController::class, 'download'])->whereUuid('deployment')->name('download');
+        Route::get('{deployment}/backup', [GitRepositoryController::class, 'backup'])->whereUuid('deployment')->name('backup');
+        Route::middleware('throttle:15,1')->group(function () {
+            Route::post('settings', [GitRepositoryController::class, 'update'])->name('settings');
+            Route::post('inspect', [GitRepositoryController::class, 'inspect'])->name('inspect');
+            Route::post('prepare', [GitRepositoryController::class, 'prepare'])->name('prepare');
+            Route::post('deploy', [GitRepositoryController::class, 'deployWithGit'])->name('deploy');
+            Route::post('discard-and-deploy', [GitRepositoryController::class, 'discardLocalChangesAndDeploy'])->name('discard-and-deploy');
+            Route::post('pull', [GitRepositoryController::class, 'pullLatest'])->name('pull');
+            Route::post('reset-to-remote', [GitRepositoryController::class, 'resetToRemote'])->name('reset-to-remote');
+            Route::post('database/check', [GitRepositoryController::class, 'checkDatabase'])->name('database.check');
+            Route::post('server/review', [GitRepositoryController::class, 'reviewServerState'])->name('server.review');
+            Route::post('{deployment}/refresh', [GitRepositoryController::class, 'refresh'])->whereUuid('deployment')->name('refresh');
+            Route::post('{deployment}/approve', [GitRepositoryController::class, 'approve'])->whereUuid('deployment')->name('approve');
+            Route::post('{deployment}/finalize', [GitRepositoryController::class, 'finalize'])->whereUuid('deployment')->name('finalize');
+            Route::post('{deployment}/recover', [GitRepositoryController::class, 'recover'])->whereUuid('deployment')->name('recover');
+            Route::post('{deployment}/rollback', [GitRepositoryController::class, 'rollback'])->whereUuid('deployment')->name('rollback');
+        });
+    });
 
 Route::prefix('system-health')
     ->name('admin.system-health.')

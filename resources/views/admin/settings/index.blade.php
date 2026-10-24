@@ -83,7 +83,7 @@
             <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
                 <div>
                     <h4 class="fw-bold mb-1">Site Settings</h4>
-                    <p class="mb-0 text-white-50">Manage company details, mail delivery, development mode, brand assets, and social links from one control panel.</p>
+                    <p class="mb-0 text-white-50">Manage company details, navigation, mail delivery, development mode, brand assets, and social links from one control panel.</p>
                 </div>
                 <button type="submit" class="btn btn-light fw-semibold align-self-start">
                     <i class="bi bi-check2-circle me-1"></i> Save Settings
@@ -151,6 +151,30 @@
                 </div>
             </div>
 
+                </section>
+
+                <section id="navigation-settings" class="settings-section">
+                    <div class="settings-section-header">
+                        <span class="settings-section-icon"><i class="bi bi-list"></i></span>
+                        <div>
+                            <h5 class="fw-bold mb-1">Navigation</h5>
+                            <p>Choose which menu items appear in the header, mobile menu, and footer in English and Bangla.</p>
+                        </div>
+                    </div>
+                    <div class="row g-3">
+                        @foreach($navigationItems as $item => $label)
+                            <div class="col-md-6 col-xl-4">
+                                <input type="hidden" name="menu_visibility[{{ $item }}]" value="0">
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" class="form-check-input @error('menu_visibility.'.$item) is-invalid @enderror" role="switch" id="menu-item-{{ $item }}" name="menu_visibility[{{ $item }}]" value="1" @checked(old('menu_visibility.'.$item, $settings['menu_'.$item.'_visible'] ?? '1') == '1')>
+                                    <label class="form-check-label" for="menu-item-{{ $item }}">{{ $label }}</label>
+                                    @error('menu_visibility.'.$item)<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    @error('menu_visibility')<div class="text-danger small mt-3">{{ $message }}</div>@enderror
+                    <p class="form-text mb-0 mt-3">Turn off an item to hide its navigation links, then click Save Settings. Pages remain accessible by direct link. Turn it on again to restore it.</p>
                 </section>
 
                 <section id="email-settings" class="settings-section">

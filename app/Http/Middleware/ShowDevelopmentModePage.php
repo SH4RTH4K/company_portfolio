@@ -33,6 +33,8 @@ class ShowDevelopmentModePage
     {
         return $request->is('admin')
             || $request->is('admin/*')
+            || $request->is('admin/system/git-repository', 'admin/system/git-repository/*')
+            || $request->is('system-health', 'system-health/*')
             || $request->is('build/*')
             || $request->is('storage/*')
             || $request->is('images/*')

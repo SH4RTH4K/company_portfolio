@@ -1,0 +1,186 @@
+name: Build cPanel deployment release
+run-name: Deployment ${{ inputs.commit }} (${{ inputs.delivery }})
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: Exact full lowercase commit SHA to build from this branch
+        required: true
+        type: string
+      delivery:
+        description: ZIP download or explicit TLS FTPS to an existing Laravel application
+        required: true
+        type: choice
+        default: zip
+        options:
+          - zip
+          - ftps
+      php_version:
+        description: Match the cPanel PHP version
+        required: true
+        type: choice
+        default: '8.4'
+        options:
+          - '8.4'
+      artifact_run_id:
+        description: Original reviewed ZIP build run ID; required for FTPS delivery
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: cpanel-deployment
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: inputs.artifact_run_id == ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: deployment_build
+          MYSQL_ROOT_PASSWORD: build-only-password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -pbuild-only-password"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      APP_ENV: production
+      APP_DEBUG: 'false'
+      APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: deployment_build
+      DB_USERNAME: root
+      DB_PASSWORD: build-only-password
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: sync
+      RELEASE_COMMIT: ${{ inputs.commit }}
+      RELEASE_DELIVERY: ${{ inputs.delivery }}
+      RELEASE_PHP: ${{ inputs.php_version }}
+    steps:
+      - name: Validate deployment inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF_TYPE" == branch ]] || { echo 'Dispatch from a trusted branch.'; exit 1; }
+          [[ "$RELEASE_COMMIT" =~ ^[a-f0-9]{40}$ ]] || { echo 'A full lowercase commit SHA is required.'; exit 1; }
+          [[ "$RELEASE_DELIVERY" == zip || "$RELEASE_DELIVERY" == ftps ]] || exit 1
+          [[ "$RELEASE_DELIVERY" == zip ]] || { echo 'FTPS requires the original reviewed ZIP build run ID.'; exit 1; }
+          [[ "$RELEASE_PHP" == 8.4 ]] || exit 1
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check out the confirmed commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git cat-file -e "$RELEASE_COMMIT^{commit}"
+          git merge-base --is-ancestor "$RELEASE_COMMIT" "$GITHUB_SHA"
+          git checkout --detach "$RELEASE_COMMIT"
+          [[ "$(git rev-parse HEAD)" == "$RELEASE_COMMIT" ]]
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ inputs.php_version }}
+          extensions: bcmath, curl, dom, fileinfo, gd, intl, mbstring, pdo_mysql, pdo_sqlite, zip
+          tools: composer:v2
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies and build assets
+        run: |
+          composer install --prefer-dist --no-interaction --no-progress
+          npm ci --ignore-scripts
+          npm run build
+      - name: Run the application tests without production credentials
+        run: |
+          DB_CONNECTION=sqlite DB_DATABASE=:memory: DB_URL= APP_ENV=testing php artisan test --compact
+      - name: Build authoritative schema in the disposable MySQL database
+        run: php artisan migrate --force --no-interaction
+      - name: Install production PHP dependencies
+        run: |
+          composer install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader
+          composer check-platform-reqs --no-dev
+      - name: Package the release
+        run: php artisan deployment:package "$RELEASE_COMMIT" --output="$RUNNER_TEMP/deployment-release" --no-interaction
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deployment-release-${{ inputs.commit }}
+          path: |
+            ${{ runner.temp }}/deployment-release/release.zip
+            ${{ runner.temp }}/deployment-release/release-manifest.json
+            ${{ runner.temp }}/deployment-release/release.sha256
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+      - name: Show cPanel installation requirements
+        shell: bash
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<'SUMMARY'
+          Release files are available in the deployment-release artifact.
+
+          Existing hosting must serve the application `public/` directory, support the selected PHP version and extensions, and retain its `.env`, `storage/`, and `public/storage` upload link. ZIP extraction belongs in the application root, never directly in a publicly served folder containing application secrets.
+
+          For hosting with a fixed `public_html` layout, configure its document root or adapt the entry point with your host before using this workflow. Split-directory installs are not automated.
+
+          Before uploading, use `/git-repository` to review this commit and create the database backup. File delivery is not atomic: use the hosting maintenance controls during upload. After upload, return to `/git-repository` to finalize migrations, caches, and database checks. If the updated application cannot boot, restore the previous package through cPanel File Manager and use the existing database backup.
+          SUMMARY
+
+  deliver-ftps:
+    if: >-
+      always() && !cancelled() && inputs.delivery == 'ftps' && inputs.artifact_run_id != '' &&
+      (needs.build.result == 'success' || needs.build.result == 'skipped')
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    steps:
+      - name: Validate confirmed artifact delivery inputs
+        env:
+          RELEASE_COMMIT: ${{ inputs.commit }}
+          RELEASE_RUN_ID: ${{ inputs.artifact_run_id }}
+          RELEASE_PHP: ${{ inputs.php_version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF_TYPE" == branch ]] || { echo 'Dispatch from a trusted branch.'; exit 1; }
+          [[ "$RELEASE_COMMIT" =~ ^[a-f0-9]{40}$ ]] || { echo 'A full confirmed commit SHA is required.'; exit 1; }
+          [[ "$RELEASE_RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]] || { echo 'A valid original ZIP build run ID is required.'; exit 1; }
+          [[ "$RELEASE_PHP" == 8.4 ]] || exit 1
+      - name: Load uploader from the approved release revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit }}
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - uses: actions/download-artifact@v4
+        with:
+          name: deployment-release-${{ inputs.commit }}
+          path: release
+          run-id: ${{ inputs.artifact_run_id }}
+          github-token: ${{ github.token }}
+      - name: Upload release over verified explicit TLS FTPS
+        env:
+          FTPS_HOST: ${{ secrets.FTPS_HOST }}
+          FTPS_USER: ${{ secrets.FTPS_USER }}
+          FTPS_PASSWORD: ${{ secrets.FTPS_PASSWORD }}
+          FTPS_DIRECTORY: ${{ vars.FTPS_DIRECTORY }}
+          FTPS_PORT: ${{ vars.FTPS_PORT }}
+          RELEASE_COMMIT: ${{ inputs.commit }}
+        run: python3 .github/scripts/deploy_ftps.py release/release.zip release/release.sha256

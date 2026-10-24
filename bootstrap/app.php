@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureAdminAccess;
 use App\Http\Middleware\EnsureRole;
+use App\Http\Middleware\HandleDeploymentMaintenance;
 use App\Http\Middleware\HandleSeoRequests;
 use App\Http\Middleware\ShowDevelopmentModePage;
 use Illuminate\Foundation\Application;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->redirectGuestsTo(fn (Request $request) => route('admin.login'));
+        $middleware->append(HandleDeploymentMaintenance::class);
         $middleware->append(HandleSeoRequests::class);
         $middleware->append(ShowDevelopmentModePage::class);
     })

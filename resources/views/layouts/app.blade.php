@@ -7,8 +7,13 @@
     @php
         $currentLocale = app()->getLocale();
         $altLocale = $currentLocale === 'en' ? 'bn' : 'en';
+        $menuIsVisible = fn (string $item): bool => (string) ($globalSettings['menu_'.$item.'_visible'] ?? '1') === '1';
+        $hasVisibleMenuItems = count(array_filter(array_keys(\App\Models\SiteSetting::NAVIGATION_ITEMS), $menuIsVisible)) > 0;
         $siteName = $globalSettings['site_name'] ?? 'Zero Gravities';
         $siteTagline = $currentLocale === 'en' ? ($globalSettings['tagline_en'] ?? 'Technology • Solutions • Commerce') : ($globalSettings['tagline_bn'] ?? 'প্রযুক্তি • সমাধান • বাণিজ্য');
+        $contactPhone = $globalSettings['phone'] ?? $globalSettings['company_phone'] ?? '+880 1800-000000';
+        $contactEmail = $globalSettings['email'] ?? $globalSettings['company_email'] ?? 'info@zerogravities.com';
+        $contactAddress = $globalSettings['address'] ?? $globalSettings['company_address'] ?? 'Dhaka, Bangladesh';
         $storedAssetUrl = fn (?string $path, string $fallback): string => $path ? url(\Illuminate\Support\Facades\Storage::url($path)) : asset($fallback);
         $logoUrl = $storedAssetUrl($globalSettings['logo'] ?? null, 'images/logo.png');
         $faviconUrl = $storedAssetUrl($globalSettings['favicon'] ?? null, 'favicon.ico');
@@ -98,7 +103,7 @@
       "logo": "{{ $logoUrl }}",
       "contactPoint": {
         "@@type": "ContactPoint",
-        "telephone": "{{ $globalSettings['company_phone'] ?? '+880 1800-000000' }}",
+        "telephone": "{{ $contactPhone }}",
         "contactType": "customer service",
         "areaServed": "BD",
         "availableLanguage": ["en", "bn"]
@@ -477,8 +482,8 @@
     <div class="bg-deep text-white py-1 px-3 small border-bottom border-secondary border-opacity-25">
         <div class="container d-flex justify-content-between align-items-center">
             <div>
-                <span class="me-3"><i class="bi bi-envelope me-1 text-accent"></i> {{ $globalSettings['company_email'] ?? 'contact@zerogravities.com' }}</span>
-                <span class="d-none d-md-inline"><i class="bi bi-telephone me-1 text-accent"></i> {{ $globalSettings['company_phone'] ?? '+880 1800-000000' }}</span>
+                <span class="me-3"><i class="bi bi-envelope me-1 text-accent"></i> {{ $contactEmail }}</span>
+                <span class="d-none d-md-inline"><i class="bi bi-telephone me-1 text-accent"></i> {{ $contactPhone }}</span>
             </div>
             <div class="d-flex align-items-center">
                 <!-- Language Switcher -->
@@ -520,60 +525,80 @@
                 @endif
             </a>
             
-            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+            @if($hasVisibleMenuItems)
+                <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
             
-            <div class="collapse navbar-collapse" id="mainNavbar">
-                <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}" href="{{ route('home', ['locale' => $currentLocale]) }}">
-                            {{ $currentLocale === 'en' ? 'Home' : 'হোম' }}
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('about') ? 'active' : '' }}" href="{{ route('about', ['locale' => $currentLocale]) }}">
-                            {{ $currentLocale === 'en' ? 'About Us' : 'আমাদের সম্পর্কে' }}
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('services.*') ? 'active' : '' }}" href="{{ route('services.index', ['locale' => $currentLocale]) }}">
-                            {{ $currentLocale === 'en' ? 'Services' : 'সেবাসমূহ' }}
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('managed-it') ? 'active' : '' }}" href="{{ route('managed-it', ['locale' => $currentLocale]) }}">
-                            <span class="badge bg-warning text-dark me-1">24/7</span> {{ $currentLocale === 'en' ? 'Managed IT / AMC' : 'আইটি এএমসি' }}
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('products.*') ? 'active' : '' }}" href="{{ route('products.index', ['locale' => $currentLocale]) }}">
-                            {{ $currentLocale === 'en' ? 'Products' : 'পণ্যসমূহ' }}
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('portfolio.*') ? 'active' : '' }}" href="{{ route('portfolio.index', ['locale' => $currentLocale]) }}">
-                            {{ $currentLocale === 'en' ? 'Portfolio' : 'পোর্টফোলিও' }}
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('industries.*') ? 'active' : '' }}" href="{{ route('industries.index', ['locale' => $currentLocale]) }}">
-                            {{ $currentLocale === 'en' ? 'Industries' : 'ইন্ডাস্ট্রিজ' }}
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('blog.*') ? 'active' : '' }}" href="{{ route('blog.index', ['locale' => $currentLocale]) }}">
-                            {{ $currentLocale === 'en' ? 'Insights' : 'ব্লগ ও ইনসাইট' }}
-                        </a>
-                    </li>
-                </ul>
+                <div class="collapse navbar-collapse" id="mainNavbar">
+                    <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+                        @if($menuIsVisible('home'))
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}" href="{{ route('home', ['locale' => $currentLocale]) }}">
+                                    {{ $currentLocale === 'en' ? 'Home' : 'হোম' }}
+                                </a>
+                            </li>
+                        @endif
+                        @if($menuIsVisible('about'))
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('about') ? 'active' : '' }}" href="{{ route('about', ['locale' => $currentLocale]) }}">
+                                    {{ $currentLocale === 'en' ? 'About Us' : 'আমাদের সম্পর্কে' }}
+                                </a>
+                            </li>
+                        @endif
+                        @if($menuIsVisible('services'))
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('services.*') ? 'active' : '' }}" href="{{ route('services.index', ['locale' => $currentLocale]) }}">
+                                    {{ $currentLocale === 'en' ? 'Services' : 'সেবাসমূহ' }}
+                                </a>
+                            </li>
+                        @endif
+                        @if($menuIsVisible('managed_it'))
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('managed-it') ? 'active' : '' }}" href="{{ route('managed-it', ['locale' => $currentLocale]) }}">
+                                    <span class="badge bg-warning text-dark me-1">24/7</span> {{ $currentLocale === 'en' ? 'Managed IT / AMC' : 'আইটি এএমসি' }}
+                                </a>
+                            </li>
+                        @endif
+                        @if($menuIsVisible('products'))
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('products.*') ? 'active' : '' }}" href="{{ route('products.index', ['locale' => $currentLocale]) }}">
+                                    {{ $currentLocale === 'en' ? 'Products' : 'পণ্যসমূহ' }}
+                                </a>
+                            </li>
+                        @endif
+                        @if($menuIsVisible('portfolio'))
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('portfolio.*') ? 'active' : '' }}" href="{{ route('portfolio.index', ['locale' => $currentLocale]) }}">
+                                    {{ $currentLocale === 'en' ? 'Portfolio' : 'পোর্টফোলিও' }}
+                                </a>
+                            </li>
+                        @endif
+                        @if($menuIsVisible('industries'))
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('industries.*') ? 'active' : '' }}" href="{{ route('industries.index', ['locale' => $currentLocale]) }}">
+                                    {{ $currentLocale === 'en' ? 'Industries' : 'ইন্ডাস্ট্রিজ' }}
+                                </a>
+                            </li>
+                        @endif
+                        @if($menuIsVisible('blog'))
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('blog.*') ? 'active' : '' }}" href="{{ route('blog.index', ['locale' => $currentLocale]) }}">
+                                    {{ $currentLocale === 'en' ? 'Insights' : 'ব্লগ ও ইনসাইট' }}
+                                </a>
+                            </li>
+                        @endif
+                    </ul>
                 
-                <div class="d-flex align-items-center">
-                    <a href="{{ route('contact', ['locale' => $currentLocale]) }}" class="btn btn-accent rounded-pill px-4 shadow-sm">
-                        <i class="bi bi-chat-dots-fill me-1"></i> {{ $currentLocale === 'en' ? 'Get a Quote' : 'যোগাযোগ করুন' }}
-                    </a>
+                    @if($menuIsVisible('contact'))
+                        <div class="d-flex align-items-center">
+                            <a href="{{ route('contact', ['locale' => $currentLocale]) }}" class="btn btn-accent rounded-pill px-4 shadow-sm">
+                                <i class="bi bi-chat-dots-fill me-1"></i> {{ $currentLocale === 'en' ? 'Get a Quote' : 'যোগাযোগ করুন' }}
+                            </a>
+                        </div>
+                    @endif
                 </div>
-            </div>
+            @endif
         </div>
     </nav>
 
@@ -625,42 +650,64 @@
                 </div>
 
                 <!-- Col 2: Solutions & Services -->
-                <div class="col-lg-2 col-md-6">
-                    <h6 class="text-uppercase fw-bold text-accent mb-3">{{ $currentLocale === 'en' ? 'Services' : 'সেবাসমূহ' }}</h6>
-                    <ul class="list-unstyled">
-                        <li><a href="{{ route('managed-it', ['locale' => $currentLocale]) }}" class="footer-link">{{ $currentLocale === 'en' ? 'Managed IT & AMC' : 'আইটি এএমসি' }}</a></li>
-                        <li><a href="{{ route('services.index', ['locale' => $currentLocale]) }}" class="footer-link">{{ $currentLocale === 'en' ? 'Custom Software' : 'কাস্টম সফটওয়্যার' }}</a></li>
-                        <li><a href="{{ route('services.index', ['locale' => $currentLocale]) }}" class="footer-link">{{ $currentLocale === 'en' ? 'Cloud & Security' : 'ক্লাউড ও নিরাপত্তা' }}</a></li>
-                        <li><a href="{{ route('products.index', ['locale' => $currentLocale]) }}" class="footer-link">{{ $currentLocale === 'en' ? 'Hardware Supply' : 'হার্ডওয়্যার সরবরাহ' }}</a></li>
-                    </ul>
-                </div>
+                @if($menuIsVisible('managed_it') || $menuIsVisible('services') || $menuIsVisible('products'))
+                    <div class="col-lg-2 col-md-6">
+                        <h6 class="text-uppercase fw-bold text-accent mb-3">{{ $currentLocale === 'en' ? 'Services' : 'সেবাসমূহ' }}</h6>
+                        <ul class="list-unstyled">
+                            @if($menuIsVisible('managed_it'))
+                                <li><a href="{{ route('managed-it', ['locale' => $currentLocale]) }}" class="footer-link">{{ $currentLocale === 'en' ? 'Managed IT & AMC' : 'আইটি এএমসি' }}</a></li>
+                            @endif
+                            @if($menuIsVisible('services'))
+                                <li><a href="{{ route('services.index', ['locale' => $currentLocale]) }}" class="footer-link">{{ $currentLocale === 'en' ? 'Custom Software' : 'কাস্টম সফটওয়্যার' }}</a></li>
+                            @endif
+                            @if($menuIsVisible('services'))
+                                <li><a href="{{ route('services.index', ['locale' => $currentLocale]) }}" class="footer-link">{{ $currentLocale === 'en' ? 'Cloud & Security' : 'ক্লাউড ও নিরাপত্তা' }}</a></li>
+                            @endif
+                            @if($menuIsVisible('products'))
+                                <li><a href="{{ route('products.index', ['locale' => $currentLocale]) }}" class="footer-link">{{ $currentLocale === 'en' ? 'Hardware Supply' : 'হার্ডওয়্যার সরবরাহ' }}</a></li>
+                            @endif
+                        </ul>
+                    </div>
+                @endif
 
                 <!-- Col 3: Quick Links -->
-                <div class="col-lg-2 col-md-6">
-                    <h6 class="text-uppercase fw-bold text-accent mb-3">{{ $currentLocale === 'en' ? 'Company' : 'কোম্পানি' }}</h6>
-                    <ul class="list-unstyled">
-                        <li><a href="{{ route('about', ['locale' => $currentLocale]) }}" class="footer-link">{{ $currentLocale === 'en' ? 'About Us' : 'আমাদের সম্পর্কে' }}</a></li>
-                        <li><a href="{{ route('portfolio.index', ['locale' => $currentLocale]) }}" class="footer-link">{{ $currentLocale === 'en' ? 'Case Studies' : 'কেস স্টাডি' }}</a></li>
-                        <li><a href="{{ route('industries.index', ['locale' => $currentLocale]) }}" class="footer-link">{{ $currentLocale === 'en' ? 'Industries' : 'ইন্ডাস্ট্রিজ' }}</a></li>
-                        <li><a href="{{ route('blog.index', ['locale' => $currentLocale]) }}" class="footer-link">{{ $currentLocale === 'en' ? 'Latest News' : 'ব্লগ ও খবর' }}</a></li>
-                        <li><a href="{{ route('contact', ['locale' => $currentLocale]) }}" class="footer-link">{{ $currentLocale === 'en' ? 'Contact Us' : 'যোগাযোগ' }}</a></li>
-                    </ul>
-                </div>
+                @if($menuIsVisible('about') || $menuIsVisible('portfolio') || $menuIsVisible('industries') || $menuIsVisible('blog') || $menuIsVisible('contact'))
+                    <div class="col-lg-2 col-md-6">
+                        <h6 class="text-uppercase fw-bold text-accent mb-3">{{ $currentLocale === 'en' ? 'Company' : 'কোম্পানি' }}</h6>
+                        <ul class="list-unstyled">
+                            @if($menuIsVisible('about'))
+                                <li><a href="{{ route('about', ['locale' => $currentLocale]) }}" class="footer-link">{{ $currentLocale === 'en' ? 'About Us' : 'আমাদের সম্পর্কে' }}</a></li>
+                            @endif
+                            @if($menuIsVisible('portfolio'))
+                                <li><a href="{{ route('portfolio.index', ['locale' => $currentLocale]) }}" class="footer-link">{{ $currentLocale === 'en' ? 'Case Studies' : 'কেস স্টাডি' }}</a></li>
+                            @endif
+                            @if($menuIsVisible('industries'))
+                                <li><a href="{{ route('industries.index', ['locale' => $currentLocale]) }}" class="footer-link">{{ $currentLocale === 'en' ? 'Industries' : 'ইন্ডাস্ট্রিজ' }}</a></li>
+                            @endif
+                            @if($menuIsVisible('blog'))
+                                <li><a href="{{ route('blog.index', ['locale' => $currentLocale]) }}" class="footer-link">{{ $currentLocale === 'en' ? 'Latest News' : 'ব্লগ ও খবর' }}</a></li>
+                            @endif
+                            @if($menuIsVisible('contact'))
+                                <li><a href="{{ route('contact', ['locale' => $currentLocale]) }}" class="footer-link">{{ $currentLocale === 'en' ? 'Contact Us' : 'যোগাযোগ' }}</a></li>
+                            @endif
+                        </ul>
+                    </div>
+                @endif
 
                 <!-- Col 4: Contact Information -->
                 <div class="col-lg-4 col-md-6">
                     <h6 class="text-uppercase fw-bold text-accent mb-3">{{ $currentLocale === 'en' ? 'Headquarters' : 'হেড অফিস' }}</h6>
                     <p class="text-white-50 mb-2">
                         <i class="bi bi-geo-alt-fill text-accent me-2"></i>
-                        {{ $globalSettings['company_address'] ?? 'Dhaka, Bangladesh' }}
+                        {{ $contactAddress }}
                     </p>
                     <p class="text-white-50 mb-2">
                         <i class="bi bi-telephone-fill text-accent me-2"></i>
-                        {{ $globalSettings['company_phone'] ?? '+880 1800-000000' }}
+                        {{ $contactPhone }}
                     </p>
                     <p class="text-white-50 mb-3">
                         <i class="bi bi-envelope-fill text-accent me-2"></i>
-                        {{ $globalSettings['company_email'] ?? 'info@zerogravities.com' }}
+                        {{ $contactEmail }}
                     </p>
                     <div class="bg-deep p-3 rounded border border-secondary border-opacity-25">
                         <span class="badge bg-success mb-1">{{ $currentLocale === 'en' ? '24/7 SLA Support' : '২৪/৭ সাপোর্ট' }}</span>
@@ -691,7 +738,7 @@
     @php
         $waNumber = $globalSettings['whatsapp'] ?? '+8801400000000';
         $waNumber = preg_replace('/[^0-9+]/', '', $waNumber);
-        $callNumber = $globalSettings['phone'] ?? $globalSettings['company_phone'] ?? '+8801400000000';
+        $callNumber = $contactPhone ?: '+8801400000000';
         $waMessage = $currentLocale === 'bn' 
             ? 'হ্যালো! আমি Zero Gravities-এর সাথে কথা বলতে চাই।'
             : 'Hello! I would like to inquire about your services.';

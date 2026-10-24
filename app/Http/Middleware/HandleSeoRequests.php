@@ -15,6 +15,10 @@ class HandleSeoRequests
 {
     public function handle(Request $request, Closure $next): Response
     {
+        if ($request->is('admin/system/git-repository', 'admin/system/git-repository/*')) {
+            return $next($request);
+        }
+
         $path = ltrim($request->getPathInfo(), '/');
 
         $redirect = null;
