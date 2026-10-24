@@ -406,6 +406,11 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a href="{{ route('admin.settings.index') }}#navigation-settings" class="nav-link">
+                        <i class="bi bi-toggles me-2"></i> Menu Visibility
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a href="{{ route('admin.settings.index') }}" class="nav-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
                         <i class="bi bi-gear me-2"></i> Settings
                     </a>

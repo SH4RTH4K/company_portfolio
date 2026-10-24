@@ -44,6 +44,7 @@ class AdminRoleManagementTest extends TestCase
             ->assertDontSee('href="'.route('admin.audit-logs.index').'"', false)
             ->assertDontSee('href="'.route('admin.cache.index').'"', false)
             ->assertDontSee('href="'.route('admin.settings.index').'"', false)
+            ->assertDontSee('Menu Visibility')
             ->assertDontSee('href="'.route('admin.seo.scripts').'"', false)
             ->assertDontSee('href="'.route('admin.seo.robots').'"', false)
             ->assertDontSee('href="'.route('admin.redirects.index').'"', false)

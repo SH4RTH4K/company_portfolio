@@ -217,6 +217,17 @@ class NavigationSettingsTest extends TestCase
         $this->assertDatabaseMissing('site_settings', ['key' => 'menu_blog_visible']);
     }
 
+    public function test_super_admin_can_open_menu_visibility_from_the_admin_sidebar(): void
+    {
+        $admin = User::factory()->create(['role' => 'super_admin']);
+
+        $this->actingAs($admin)
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('Menu Visibility')
+            ->assertSee('href="'.route('admin.settings.index').'#navigation-settings"', false);
+    }
+
     public function test_editors_cannot_update_navigation_settings(): void
     {
         $editor = User::factory()->create(['role' => 'editor']);
