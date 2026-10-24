@@ -20,8 +20,9 @@ on:
         description: Match the cPanel PHP version
         required: true
         type: choice
-        default: '8.4'
+        default: '8.3'
         options:
+          - '8.3'
           - '8.4'
       artifact_run_id:
         description: Original reviewed ZIP build run ID; required for FTPS delivery
@@ -80,7 +81,7 @@ jobs:
           [[ "$RELEASE_COMMIT" =~ ^[a-f0-9]{40}$ ]] || { echo 'A full lowercase commit SHA is required.'; exit 1; }
           [[ "$RELEASE_DELIVERY" == zip || "$RELEASE_DELIVERY" == ftps ]] || exit 1
           [[ "$RELEASE_DELIVERY" == zip ]] || { echo 'FTPS requires the original reviewed ZIP build run ID.'; exit 1; }
-          [[ "$RELEASE_PHP" == 8.4 ]] || exit 1
+          [[ "$RELEASE_PHP" == 8.3 || "$RELEASE_PHP" == 8.4 ]] || exit 1
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -162,7 +163,7 @@ jobs:
           [[ "$GITHUB_REF_TYPE" == branch ]] || { echo 'Dispatch from a trusted branch.'; exit 1; }
           [[ "$RELEASE_COMMIT" =~ ^[a-f0-9]{40}$ ]] || { echo 'A full confirmed commit SHA is required.'; exit 1; }
           [[ "$RELEASE_RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]] || { echo 'A valid original ZIP build run ID is required.'; exit 1; }
-          [[ "$RELEASE_PHP" == 8.4 ]] || exit 1
+          [[ "$RELEASE_PHP" == 8.3 || "$RELEASE_PHP" == 8.4 ]] || exit 1
       - name: Load uploader from the approved release revision
         uses: actions/checkout@v4
         with:
