@@ -255,6 +255,11 @@
         @endphp
         <ul class="nav nav-pills flex-column mb-auto">
             <li class="nav-item">
+                <a href="{{ url('/') }}" class="nav-link" target="_blank" rel="noopener noreferrer">
+                    <i class="bi bi-box-arrow-up-right"></i> View Website
+                </a>
+            </li>
+            <li class="nav-item">
                 <a href="{{ route('admin.dashboard') }}" class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                     <i class="bi bi-speedometer2 me-2"></i> Dashboard
                 </a>
