@@ -242,6 +242,43 @@ PHP);
         $this->assertTrue(Schema::hasColumn('site_settings', 'after_backup_column'));
     }
 
+    public function test_deployment_backup_works_when_the_backup_history_table_is_missing(): void
+    {
+        Storage::fake('local');
+        Schema::drop('system_backups');
+        DB::table('site_settings')->insert(['key' => 'backup-recovery-marker', 'value_en' => 'Saved before schema repair']);
+
+        $path = $this->app->make(DeploymentDatabaseService::class)->backup('deployment-without-history-table');
+        $sql = gzdecode(Storage::disk('local')->get($path));
+
+        $this->assertSame('git-deployment/backups/deployment-without-history-table.sql.gz', $path);
+        $this->assertIsString($sql);
+        $this->assertStringContainsString('CREATE TABLE "site_settings"', $sql);
+        $this->assertStringContainsString('backup-recovery-marker', $sql);
+        $this->assertStringContainsString('Saved before schema repair', $sql);
+        $this->assertFalse(Schema::hasTable('system_backups'));
+    }
+
+    public function test_repair_migration_recreates_only_the_missing_system_backup_table(): void
+    {
+        $migrationFiles = glob(database_path('migrations/*_restore_missing_system_backups_table.php'));
+        $this->assertCount(1, $migrationFiles);
+
+        $migration = require $migrationFiles[0];
+        Schema::drop('system_backups');
+
+        $migration->up();
+        $migration->up();
+
+        $this->assertTrue(Schema::hasTable('system_backups'));
+        $this->assertSame(
+            ['id', 'filename', 'type', 'status', 'created_by', 'size_bytes', 'error', 'completed_at', 'created_at', 'updated_at'],
+            Schema::getColumnListing('system_backups'),
+        );
+        $this->assertTrue(Schema::hasIndex('system_backups', ['filename']));
+        $this->assertTrue(Schema::hasIndex('system_backups', ['status', 'created_at']));
+    }
+
     public function test_backup_failure_is_sanitized_and_does_not_apply_pending_migrations(): void
     {
         $disk = Storage::fake('local');

@@ -125,6 +125,35 @@ class SystemBackupService
         }
     }
 
+    public function writeDatabaseArchive(string $path): void
+    {
+        $gzipHandle = gzopen($path, 'wb9');
+
+        if ($gzipHandle === false) {
+            throw new RuntimeException('The database snapshot could not be opened.');
+        }
+
+        try {
+            $this->writeRecord($gzipHandle, [
+                'kind' => 'metadata',
+                'format' => self::FORMAT,
+                'version' => self::FORMAT_VERSION,
+                'type' => 'database',
+                'database' => config('database.default'),
+                'created_at' => now()->toIso8601String(),
+            ]);
+            $this->writeDatabase($gzipHandle);
+        } catch (Throwable $exception) {
+            gzclose($gzipHandle);
+
+            throw $exception;
+        }
+
+        if (! gzclose($gzipHandle)) {
+            throw new RuntimeException('The database snapshot could not be finalized.');
+        }
+    }
+
     public function restore(string $temporaryPath, string $expectedType, ?string $createdBy = null): stdClass
     {
         if (! in_array($expectedType, self::TYPES, true)) {

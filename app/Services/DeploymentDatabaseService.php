@@ -6,6 +6,7 @@ use Illuminate\Database\Connection;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Migrations\Migrator;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -115,6 +116,8 @@ class DeploymentDatabaseService
             : (string) Str::uuid();
         $path = 'git-deployment/backups/'.$safeId.'.sql.gz';
         $temporaryPath = null;
+        $temporaryArchivePath = null;
+        $archivePath = null;
         $gzipHandle = false;
         $disk = Storage::disk('local');
 
@@ -123,7 +126,20 @@ class DeploymentDatabaseService
                 throw new RuntimeException('The deployment backup already exists.');
             }
 
-            $archive = $this->backups->create('database', 'Before Git deployment '.$safeId);
+            if (Schema::hasTable('system_backups')) {
+                $archive = $this->backups->create('database', 'Before Git deployment '.$safeId);
+                $archivePath = $disk->path('backups/'.$archive->filename);
+            } else {
+                $temporaryArchivePath = tempnam(sys_get_temp_dir(), 'git-deployment-database-');
+
+                if ($temporaryArchivePath === false) {
+                    throw new RuntimeException('The temporary database snapshot could not be created.');
+                }
+
+                $this->backups->writeDatabaseArchive($temporaryArchivePath);
+                $archivePath = $temporaryArchivePath;
+            }
+
             $temporaryPath = tempnam(sys_get_temp_dir(), 'git-deployment-sql-');
 
             if ($temporaryPath === false) {
@@ -136,7 +152,7 @@ class DeploymentDatabaseService
                 throw new RuntimeException('The deployment backup could not be opened.');
             }
 
-            $this->backups->writePhpMyAdminSql($disk->path('backups/'.$archive->filename), $gzipHandle);
+            $this->backups->writePhpMyAdminSql($archivePath, $gzipHandle);
 
             if (! gzclose($gzipHandle)) {
                 throw new RuntimeException('The deployment backup could not be finalized.');
@@ -171,6 +187,10 @@ class DeploymentDatabaseService
 
             if (is_string($temporaryPath) && is_file($temporaryPath)) {
                 unlink($temporaryPath);
+            }
+
+            if (is_string($temporaryArchivePath) && is_file($temporaryArchivePath)) {
+                unlink($temporaryArchivePath);
             }
         }
     }
