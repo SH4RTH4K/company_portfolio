@@ -257,9 +257,9 @@ class LocalGitDeploymentService
      * @param  array<string, mixed>  $settings
      * @return array<string, mixed>
      */
-    public function deploy(array $settings, string $reviewedCommit, int $actorId, string $actor, bool $discardLocalChanges = false): array
+    public function deploy(array $settings, string $reviewedCommit, int $actorId, string $actor, bool $discardLocalChanges = false, bool $backupDatabase = true): array
     {
-        return $this->locked(function () use ($settings, $reviewedCommit, $actorId, $actor, $discardLocalChanges): array {
+        return $this->locked(function () use ($settings, $reviewedCommit, $actorId, $actor, $discardLocalChanges, $backupDatabase): array {
             $status = $this->fetchWithoutLock($settings);
 
             if ($discardLocalChanges && $status['status'] === 'Local Changes Detected') {
@@ -283,7 +283,7 @@ class LocalGitDeploymentService
             }
 
             $id = (string) Str::uuid();
-            $backup = $this->database->backup($id);
+            $backup = $backupDatabase ? $this->database->backup($id) : null;
 
             if (! empty($status['local_changes_match_target'])) {
                 $this->gitOrFail($settings, ['reset', '--hard', $status['remote']], 'The tracked application files could not be aligned with the reviewed remote update.');
@@ -307,7 +307,10 @@ class LocalGitDeploymentService
                 'migration_status' => 'not_run',
                 'health_status' => 'not_run',
                 'database_report' => [],
-                'logs' => ['Repository access, server file review and database backup completed.'],
+                'logs' => [
+                    'Repository access and server file review completed.',
+                    $backupDatabase ? 'Database backup completed.' : 'Database backup skipped by request.',
+                ],
             ];
 
             $this->store->saveRelease($release);

@@ -65,8 +65,13 @@ class GitRepositoryController extends Controller
         }
 
         $history = array_slice($this->store->history(), 0, 30);
+        $maintenanceDeployment = $this->store->readData('maintenance')['deployment'] ?? null;
 
         foreach ($history as &$release) {
+            $release['can_delete_backup'] = ! empty($release['backup'])
+                && in_array($release['status'], ['completed', 'failed', 'recovered'], true)
+                && $maintenanceDeployment !== $release['id'];
+
             if (($release['transport'] ?? null) === 'git') {
                 $release['can_rollback'] = $release['status'] === 'completed'
                     && $release['repository'] === $settings['repository']
@@ -249,14 +254,15 @@ class GitRepositoryController extends Controller
         $validated = $request->validate([
             'commit' => ['required', 'regex:/\A[a-f0-9]{40}\z/'],
             'confirmation' => ['accepted'],
+            'backup_database' => ['sometimes', 'boolean'],
         ]);
 
         return $this->perform(function () use ($request, $validated): void {
-            $release = $this->localGit->deploy($this->store->settings(), $validated['commit'], (int) $request->user()->id, $request->user()->name);
+            $release = $this->localGit->deploy($this->store->settings(), $validated['commit'], (int) $request->user()->id, $request->user()->name, backupDatabase: $request->boolean('backup_database', true));
             $this->store->writeData('git-status', $this->localGit->status($this->store->settings()));
 
             if ($release['health_status'] === 'attention') {
-                throw new RuntimeException('The source was deployed, but database health checks need attention. Review the saved checks and backup before continuing.');
+                throw new RuntimeException('The source was deployed, but database health checks need attention. Review the saved checks before continuing.');
             }
         }, 'Reviewed Git update deployed. Migrations, cache work and the database health check completed.');
     }
@@ -267,10 +273,11 @@ class GitRepositoryController extends Controller
         $validated = $request->validate([
             'commit' => ['required', 'regex:/\A[a-f0-9]{40}\z/'],
             'confirmation' => ['required', 'in:DISCARD LOCAL CHANGES'],
+            'backup_database' => ['sometimes', 'boolean'],
         ]);
 
         return $this->perform(function () use ($request, $validated): void {
-            $this->localGit->deploy($this->store->settings(), $validated['commit'], (int) $request->user()->id, $request->user()->name, true);
+            $this->localGit->deploy($this->store->settings(), $validated['commit'], (int) $request->user()->id, $request->user()->name, true, $request->boolean('backup_database', true));
             $this->store->writeData('git-status', $this->localGit->status($this->store->settings()));
         }, 'Tracked server changes were discarded and the reviewed Git update was deployed.');
     }
@@ -281,12 +288,13 @@ class GitRepositoryController extends Controller
         $validated = $request->validate([
             'commit' => ['required', 'regex:/\A[a-f0-9]{40}\z/'],
             'confirmation' => ['accepted'],
+            'backup_database' => ['sometimes', 'boolean'],
         ]);
 
         return $this->perform(function () use ($request, $validated): void {
-            $this->localGit->deploy($this->store->settings(), $validated['commit'], (int) $request->user()->id, $request->user()->name);
+            $this->localGit->deploy($this->store->settings(), $validated['commit'], (int) $request->user()->id, $request->user()->name, backupDatabase: $request->boolean('backup_database', true));
             $this->store->writeData('git-status', $this->localGit->status($this->store->settings()));
-        }, 'The reviewed update was deployed with a database backup and selected checks.');
+        }, 'The reviewed update was deployed with the selected checks.');
     }
 
     public function resetToRemote(Request $request): RedirectResponse
@@ -340,6 +348,14 @@ class GitRepositoryController extends Controller
         abort_unless(is_string($path) && str_starts_with($path, 'git-deployment/backups/') && Storage::disk('local')->exists($path), 404);
 
         return Storage::disk('local')->download($path, 'before-deployment-'.$deployment.'.sql.gz');
+    }
+
+    public function deleteBackup(Request $request, string $deployment): RedirectResponse
+    {
+        return $this->perform(
+            fn () => $this->deployments->deleteBackup($deployment, $request->user()->name),
+            'Database backup deleted. Deployment history was kept.'
+        );
     }
 
     public function finalize(Request $request, string $deployment): RedirectResponse

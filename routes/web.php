@@ -112,6 +112,7 @@ Route::prefix('admin/system/git-repository')
         Route::get('{deployment}/download', [GitRepositoryController::class, 'download'])->whereUuid('deployment')->name('download');
         Route::get('{deployment}/backup', [GitRepositoryController::class, 'backup'])->whereUuid('deployment')->name('backup');
         Route::middleware('throttle:15,1')->group(function () {
+            Route::delete('{deployment}/backup', [GitRepositoryController::class, 'deleteBackup'])->whereUuid('deployment')->name('backup.delete');
             Route::post('settings', [GitRepositoryController::class, 'update'])->name('settings');
             Route::post('inspect', [GitRepositoryController::class, 'inspect'])->name('inspect');
             Route::post('prepare', [GitRepositoryController::class, 'prepare'])->name('prepare');

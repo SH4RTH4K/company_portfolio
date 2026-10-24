@@ -8,6 +8,8 @@ use App\Services\DeploymentDatabaseService;
 use App\Services\DeploymentStore;
 use App\Services\GitDeploymentService;
 use App\Services\LocalGitDeploymentService;
+use DOMDocument;
+use DOMXPath;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Crypt;
@@ -126,7 +128,7 @@ class GitRepositoryTest extends TestCase
         $localGit = Mockery::mock(LocalGitDeploymentService::class);
         $localGit->shouldReceive('deploy')
             ->once()
-            ->with($settings, self::COMMIT, $admin->id, $admin->name)
+            ->with($settings, self::COMMIT, $admin->id, $admin->name, false, true)
             ->andReturn(['id' => self::RELEASE_ID, 'health_status' => 'passed']);
         $localGit->shouldReceive('status')->once()->with($settings)->andReturn(['status' => 'Up to date']);
         $this->instance(LocalGitDeploymentService::class, $localGit);
@@ -138,6 +140,126 @@ class GitRepositoryTest extends TestCase
 
         $this->assertSame('Up to date', $store->readData('git-status')['status']);
         Http::assertNothingSent();
+    }
+
+    #[DataProvider('serverGitBackupOptions')]
+    public function test_server_git_actions_pass_the_selected_database_backup_option(string $action, string $confirmation, bool $discardLocalChanges, array $input, bool $backupDatabase): void
+    {
+        $this->privateStorage();
+        Http::preventStrayRequests();
+        $settings = $this->settings(['delivery' => 'git', 'enabled' => true]);
+        $this->store()->saveSettings($settings);
+        $admin = User::factory()->create(['role' => 'super_admin', 'is_active' => true]);
+        $localGit = Mockery::mock(LocalGitDeploymentService::class);
+        $localGit->shouldReceive('deploy')->once()
+            ->with($settings, self::COMMIT, $admin->id, $admin->name, $discardLocalChanges, $backupDatabase)
+            ->andReturn(['id' => self::RELEASE_ID, 'health_status' => 'passed']);
+        $localGit->shouldReceive('status')->once()->with($settings)->andReturn(['status' => 'Up to date']);
+        $this->instance(LocalGitDeploymentService::class, $localGit);
+
+        $this->actingAs($admin)
+            ->post(route('admin.git-repository.'.$action), $input + ['commit' => self::COMMIT, 'confirmation' => $confirmation])
+            ->assertRedirect(route('admin.git-repository.index'))
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success');
+
+        $this->assertSame('Up to date', $this->store()->readData('git-status')['status']);
+        Http::assertNothingSent();
+    }
+
+    #[DataProvider('serverGitActions')]
+    public function test_server_git_actions_reject_invalid_database_backup_choices(string $action, string $confirmation, bool $discardLocalChanges): void
+    {
+        $this->privateStorage();
+        $this->store()->saveSettings($this->settings(['delivery' => 'git']));
+        $localGit = Mockery::mock(LocalGitDeploymentService::class);
+        $localGit->shouldNotReceive('deploy');
+        $this->instance(LocalGitDeploymentService::class, $localGit);
+
+        $this->actingAs(User::factory()->create(['role' => 'super_admin', 'is_active' => true]))
+            ->from(route('admin.git-repository.index'))
+            ->post(route('admin.git-repository.'.$action), [
+                'commit' => self::COMMIT,
+                'confirmation' => $confirmation,
+                'backup_database' => 'invalid',
+            ])
+            ->assertRedirect(route('admin.git-repository.index'))
+            ->assertInvalid(['backup_database' => 'must be true or false']);
+
+        $this->assertSame([], $this->store()->history());
+        Storage::disk('local')->assertMissing('git-deployment/maintenance.json');
+    }
+
+    public function test_skipping_the_database_backup_still_requires_deployment_confirmation(): void
+    {
+        $this->privateStorage();
+        $this->store()->saveSettings($this->settings(['delivery' => 'git']));
+        $localGit = Mockery::mock(LocalGitDeploymentService::class);
+        $localGit->shouldNotReceive('deploy');
+        $this->instance(LocalGitDeploymentService::class, $localGit);
+
+        $this->actingAs(User::factory()->create(['role' => 'super_admin', 'is_active' => true]))
+            ->from(route('admin.git-repository.index'))
+            ->post(route('admin.git-repository.deploy'), ['commit' => self::COMMIT, 'backup_database' => '0'])
+            ->assertRedirect(route('admin.git-repository.index'))
+            ->assertInvalid(['confirmation' => 'must be accepted']);
+
+        $this->assertSame([], $this->store()->history());
+    }
+
+    public function test_server_git_deployment_form_separates_optional_backup_from_required_confirmation(): void
+    {
+        $this->privateStorage();
+        $this->store()->saveSettings($this->settings(['delivery' => 'git']));
+        $status = ['status' => 'Update Available', 'remote' => self::COMMIT, 'checked_at' => now()->toIso8601String()];
+        $this->store()->writeData('git-status', $status);
+        $localGit = Mockery::mock(LocalGitDeploymentService::class);
+        $localGit->shouldReceive('status')->once()->andReturn($status);
+        $this->instance(LocalGitDeploymentService::class, $localGit);
+
+        $response = $this->actingAs(User::factory()->create(['role' => 'super_admin', 'is_active' => true]))
+            ->get(route('admin.git-repository.index'))
+            ->assertSee('Create a database backup before deployment (optional).');
+
+        $document = new DOMDocument;
+        $document->loadHTML($response->getContent(), LIBXML_NOERROR | LIBXML_NOWARNING);
+        $xpath = new DOMXPath($document);
+        $this->assertSame(1, (int) $xpath->evaluate('count(//input[@id="backup-server-git-deploy" and @name="backup_database" and @checked and not(@required)])'));
+        $this->assertSame(1, (int) $xpath->evaluate('count(//input[@id="backup-server-git-deploy"]/../preceding-sibling::input[@type="hidden" and @name="backup_database" and @value="0"])'));
+        $this->assertSame(1, (int) $xpath->evaluate('count(//input[@id="confirm-server-git-deploy" and @required])'));
+    }
+
+    /**
+     * @return array<string, array{string, string, bool}>
+     */
+    public static function serverGitActions(): array
+    {
+        return [
+            'reviewed deploy' => ['deploy', '1', false],
+            'pull latest' => ['pull', '1', false],
+            'discard and deploy' => ['discard-and-deploy', 'DISCARD LOCAL CHANGES', true],
+        ];
+    }
+
+    /**
+     * @return array<string, array{string, string, bool, array<string, string>, bool}>
+     */
+    public static function serverGitBackupOptions(): array
+    {
+        $options = [
+            'default backup' => [[], true],
+            'backup selected' => [['backup_database' => '1'], true],
+            'backup skipped' => [['backup_database' => '0'], false],
+        ];
+        $cases = [];
+
+        foreach (self::serverGitActions() as $action => [$route, $confirmation, $discardLocalChanges]) {
+            foreach ($options as $option => [$input, $backupDatabase]) {
+                $cases[$action.' '.$option] = [$route, $confirmation, $discardLocalChanges, $input, $backupDatabase];
+            }
+        }
+
+        return $cases;
     }
 
     public function test_disabled_integration_blocks_github_checks_without_network_access(): void
@@ -636,6 +758,46 @@ class GitRepositoryTest extends TestCase
         Http::assertNothingSent();
     }
 
+    #[DataProvider('backupDeletionVisibility')]
+    public function test_deployment_history_offers_backup_deletion_only_for_finished_deployments(string $transport, string $status, bool $maintenance, int $expectedForms): void
+    {
+        $this->privateStorage();
+        Http::preventStrayRequests();
+        $this->store()->saveSettings($this->settings());
+        $this->store()->saveRelease($this->release([
+            'transport' => $transport,
+            'status' => $status,
+            'backup' => 'git-deployment/backups/before.sql.gz',
+            'approved_at' => '2026-10-24T10:00:00+00:00',
+        ]));
+        $this->store()->writeData('maintenance', ['deployment' => $maintenance ? self::RELEASE_ID : null]);
+
+        $response = $this->actingAs(User::factory()->create(['role' => 'super_admin', 'is_active' => true]))
+            ->get(route('admin.git-repository.index'));
+
+        $document = new DOMDocument;
+        $document->loadHTML($response->getContent(), LIBXML_NOERROR | LIBXML_NOWARNING);
+        $xpath = new DOMXPath($document);
+        $action = route('admin.git-repository.backup.delete', self::RELEASE_ID);
+        $this->assertSame($expectedForms, (int) $xpath->evaluate('count(//form[@action="'.$action.'"])'));
+        $this->assertSame($expectedForms, (int) $xpath->evaluate('count(//form[@action="'.$action.'"]//input[@name="_method" and @value="DELETE"])'));
+        $this->assertSame(1, (int) $xpath->evaluate('count(//a[@href="'.$action.'"])'));
+        Http::assertNothingSent();
+    }
+
+    /**
+     * @return array<string, array{string, string, bool, int}>
+     */
+    public static function backupDeletionVisibility(): array
+    {
+        return [
+            'completed Git deployment' => ['git', 'completed', false, 1],
+            'completed package deployment' => ['zip', 'completed', false, 1],
+            'package awaiting verification' => ['zip', 'awaiting_verification', false, 0],
+            'failed deployment in maintenance' => ['git', 'failed', true, 0],
+        ];
+    }
+
     public function test_invalid_installed_manifest_keeps_recovery_page_and_backup_links_available(): void
     {
         $this->privateStorage();
@@ -804,6 +966,7 @@ class GitRepositoryTest extends TestCase
             ['post', 'admin.git-repository.rollback', ['deployment' => self::RELEASE_ID]],
             ['get', 'admin.git-repository.download', ['deployment' => self::RELEASE_ID]],
             ['get', 'admin.git-repository.backup', ['deployment' => self::RELEASE_ID]],
+            ['delete', 'admin.git-repository.backup.delete', ['deployment' => self::RELEASE_ID]],
         ];
     }
 }

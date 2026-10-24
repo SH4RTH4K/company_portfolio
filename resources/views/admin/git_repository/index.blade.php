@@ -184,7 +184,9 @@
                             <form action="{{ route('admin.git-repository.deploy') }}" method="POST">
                                 @csrf
                                 <input type="hidden" name="commit" value="{{ $gitStatus['remote'] }}">
-                                <div class="form-check small mb-2"><input class="form-check-input" type="checkbox" name="confirmation" value="1" id="confirm-server-git-deploy" required><label class="form-check-label" for="confirm-server-git-deploy">Confirm this reviewed update and its database backup.</label></div>
+                                <input type="hidden" name="backup_database" value="0">
+                                <div class="form-check small mb-2"><input class="form-check-input" type="checkbox" name="backup_database" value="1" id="backup-server-git-deploy" @checked(old('backup_database', '1') == '1')><label class="form-check-label" for="backup-server-git-deploy">Create a database backup before deployment (optional).</label></div>
+                                <div class="form-check small mb-2"><input class="form-check-input" type="checkbox" name="confirmation" value="1" id="confirm-server-git-deploy" required><label class="form-check-label" for="confirm-server-git-deploy">Confirm this reviewed update.</label></div>
                                 <button class="btn btn-primary btn-sm" type="submit">Deploy reviewed update</button>
                             </form>
                         @elseif(($gitStatus['status'] ?? null) === 'Update Available')
@@ -193,7 +195,14 @@
                             @if(!empty($gitStatus['commits']))
                                 <details><summary class="small">Discard tracked edits and deploy</summary>
                                     <p class="small text-muted mt-2">This discards tracked server edits. Untracked files and uploaded assets remain.</p>
-                                    <form action="{{ route('admin.git-repository.discard-and-deploy') }}" method="POST" class="d-flex flex-wrap gap-2 align-items-center">@csrf<input type="hidden" name="commit" value="{{ $gitStatus['remote'] }}"><input class="form-control form-control-sm" name="confirmation" placeholder="Type DISCARD LOCAL CHANGES" pattern="DISCARD LOCAL CHANGES" required style="max-width:260px;"><button class="btn btn-outline-danger btn-sm" type="submit">Discard tracked edits &amp; deploy</button></form>
+                                    <form action="{{ route('admin.git-repository.discard-and-deploy') }}" method="POST" class="d-flex flex-wrap gap-2 align-items-center">
+                                        @csrf
+                                        <input type="hidden" name="commit" value="{{ $gitStatus['remote'] }}">
+                                        <input type="hidden" name="backup_database" value="0">
+                                        <div class="form-check small"><input class="form-check-input" type="checkbox" name="backup_database" value="1" id="backup-discard-git-deploy" @checked(old('backup_database', '1') == '1')><label class="form-check-label" for="backup-discard-git-deploy">Create a database backup (optional).</label></div>
+                                        <input class="form-control form-control-sm" name="confirmation" placeholder="Type DISCARD LOCAL CHANGES" pattern="DISCARD LOCAL CHANGES" required style="max-width:260px;">
+                                        <button class="btn btn-outline-danger btn-sm" type="submit">Discard tracked edits &amp; deploy</button>
+                                    </form>
                                 </details>
                             @else
                                 <p class="small text-muted mb-0">Tracked server changes block deployment, and no incoming update is available to deploy.</p>
@@ -293,7 +302,9 @@
                         <summary class="btn btn-outline-secondary btn-sm">Pull latest</summary>
                         <form action="{{ route('admin.git-repository.pull') }}" method="POST" class="position-absolute bg-white border rounded shadow-sm p-3 mt-1" style="z-index:2;max-width:320px;">
                             @csrf<input type="hidden" name="commit" value="{{ $gitStatus['remote'] }}">
-                            <div class="form-check small mb-2"><input class="form-check-input" type="checkbox" name="confirmation" value="1" id="confirm-history-pull" required><label class="form-check-label" for="confirm-history-pull">Back up the database, deploy this checked commit, and run the selected migration, cache and health checks.</label></div>
+                            <input type="hidden" name="backup_database" value="0">
+                            <div class="form-check small mb-2"><input class="form-check-input" type="checkbox" name="backup_database" value="1" id="backup-history-pull" @checked(old('backup_database', '1') == '1')><label class="form-check-label" for="backup-history-pull">Create a database backup (optional).</label></div>
+                            <div class="form-check small mb-2"><input class="form-check-input" type="checkbox" name="confirmation" value="1" id="confirm-history-pull" required><label class="form-check-label" for="confirm-history-pull">Deploy this checked commit and run the selected migration, cache and health checks.</label></div>
                             <button class="btn btn-outline-primary btn-sm" type="submit">Pull latest with checks</button>
                         </form>
                     </details>
@@ -331,8 +342,19 @@
                         </td>
                         <td><span class="badge rounded-pill {{ $release['status'] === 'completed' ? 'text-bg-success' : (in_array($release['status'], ['failed', 'verification_failed']) ? 'text-bg-danger' : 'text-bg-primary') }}">{{ ucwords(str_replace('_', ' ', $release['status'])) }}</span></td>
                         <td style="min-width:230px;">
+                            @if($release['backup'])
+                                <div class="d-flex flex-wrap gap-1 mb-2">
+                                    <a href="{{ route('admin.git-repository.backup', $release['id']) }}" class="btn btn-outline-secondary btn-sm">SQL backup</a>
+                                    @if($release['can_delete_backup'])
+                                        <form action="{{ route('admin.git-repository.backup.delete', $release['id']) }}" method="POST" onsubmit="return confirm('Permanently delete this database backup?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button class="btn btn-outline-danger btn-sm" type="submit">Delete backup</button>
+                                        </form>
+                                    @endif
+                                </div>
+                            @endif
                             @if(($release['transport'] ?? null) === 'git')
-                                @if($release['backup'])<a href="{{ route('admin.git-repository.backup', $release['id']) }}" class="btn btn-outline-secondary btn-sm mb-2">SQL backup</a>@endif
                                 @if($release['can_rollback'] && empty($release['rollback_of']))
                                     <details><summary class="small">Rollback source</summary>
                                         <p class="small text-muted mt-2">Creates a fresh database backup and resets source files to the previous commit. Database migrations are not reversed.</p>
@@ -358,7 +380,6 @@
                             @elseif($release['approved_at'])
                                 <div class="d-flex flex-wrap gap-1 mb-2">
                                     <a href="{{ route('admin.git-repository.download', $release['id']) }}" class="btn btn-outline-primary btn-sm">Release ZIP</a>
-                                    @if($release['backup'])<a href="{{ route('admin.git-repository.backup', $release['id']) }}" class="btn btn-outline-secondary btn-sm">SQL backup</a>@endif
                                 </div>
                                 @if(in_array($release['status'], ['awaiting_verification', 'verification_failed']))
                                     <form action="{{ route('admin.git-repository.finalize', $release['id']) }}" method="POST" class="mb-2">

@@ -341,6 +341,34 @@ class GitDeploymentService
         });
     }
 
+    public function deleteBackup(string $id, string $actor): void
+    {
+        $this->locked(function () use ($id, $actor): void {
+            $release = $this->store->release($id);
+            $maintenance = $this->store->readData('maintenance');
+
+            if (! in_array($release['status'], ['completed', 'failed', 'recovered'], true)
+                || ($maintenance['deployment'] ?? null) === $id) {
+                throw new RuntimeException('Finish or recover this deployment before deleting its database backup.');
+            }
+
+            $path = $release['backup'] ?? null;
+            $disk = Storage::disk('local');
+            abort_unless(is_string($path)
+                && preg_match('/\Agit-deployment\/backups\/[A-Za-z0-9][A-Za-z0-9_-]{0,99}\.sql\.gz\z/', $path) === 1
+                && $disk->exists($path), 404);
+
+            if (! $disk->delete($path)) {
+                throw new RuntimeException('The database backup could not be deleted. Check private storage permissions and try again.');
+            }
+
+            $release['backup'] = null;
+            $release['backup_deleted_at'] = now()->toIso8601String();
+            $release['logs'][] = 'Database backup deleted by '.$actor.'.';
+            $this->store->saveRelease($release);
+        });
+    }
+
     /** @return array<string, mixed> */
     public function finalize(string $id): array
     {
