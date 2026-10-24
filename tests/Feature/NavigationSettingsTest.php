@@ -80,7 +80,8 @@ class NavigationSettingsTest extends TestCase
         $this->assertLinkCount($xpath, '//footer', route('blog.index', ['locale' => $locale]), 1);
     }
 
-    public function test_hidden_pages_remain_reachable_and_menu_items_can_be_restored(): void
+    #[DataProvider('locales')]
+    public function test_disabled_pages_are_unreachable_and_menu_items_can_be_restored(string $locale): void
     {
         $admin = User::factory()->create(['role' => 'super_admin']);
 
@@ -89,20 +90,20 @@ class NavigationSettingsTest extends TestCase
             ->assertRedirect()
             ->assertSessionHasNoErrors();
 
-        $hiddenPage = $this->get(route('blog.index', ['locale' => 'en']));
-        $hiddenPage->assertOk();
-        $this->assertLinkCount($this->xpath($hiddenPage), '//*[@id="mainNavbar"]', route('blog.index', ['locale' => 'en']), 0);
-        $this->assertLinkCount($this->xpath($hiddenPage), '//footer', route('blog.index', ['locale' => 'en']), 0);
+        $hiddenPage = $this->get(route('blog.index', ['locale' => $locale]));
+        $hiddenPage->assertNotFound();
+        $this->assertLinkCount($this->xpath($hiddenPage), '//*[@id="mainNavbar"]', route('blog.index', ['locale' => $locale]), 0);
+        $this->assertLinkCount($this->xpath($hiddenPage), '//footer', route('blog.index', ['locale' => $locale]), 0);
 
         $this->post(route('admin.settings.update'), ['menu_visibility' => ['blog' => '1']])
             ->assertRedirect()
             ->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('site_settings', ['key' => 'menu_blog_visible', 'value_en' => '1']);
-        $restoredPage = $this->get(route('blog.index', ['locale' => 'en']));
+        $restoredPage = $this->get(route('blog.index', ['locale' => $locale]));
         $restoredPage->assertOk();
-        $this->assertLinkCount($this->xpath($restoredPage), '//*[@id="mainNavbar"]', route('blog.index', ['locale' => 'en']), 1);
-        $this->assertLinkCount($this->xpath($restoredPage), '//footer', route('blog.index', ['locale' => 'en']), 1);
+        $this->assertLinkCount($this->xpath($restoredPage), '//*[@id="mainNavbar"]', route('blog.index', ['locale' => $locale]), 1);
+        $this->assertLinkCount($this->xpath($restoredPage), '//footer', route('blog.index', ['locale' => $locale]), 1);
     }
 
     #[DataProvider('locales')]
@@ -117,7 +118,7 @@ class NavigationSettingsTest extends TestCase
             ->assertSessionHasNoErrors();
 
         $response = $this->get(route('home', ['locale' => $locale]));
-        $response->assertOk();
+        $response->assertNotFound();
         $xpath = $this->xpath($response);
 
         $this->assertSame(0, (int) $xpath->evaluate('count(//*[@id="mainNavbar"])'));

@@ -33,6 +33,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\FrontendController;
 use App\Http\Controllers\PublicSeoController;
+use App\Http\Middleware\EnsureNavigationItemIsEnabled;
 use App\Models\SiteSetting;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
@@ -175,24 +176,24 @@ Route::get('/', function () {
 });
 
 Route::group(['prefix' => '{locale}', 'where' => ['locale' => 'en|bn']], function () {
-    Route::get('/', [FrontendController::class, 'home'])->name('home');
-    Route::get('/about', [FrontendController::class, 'about'])->name('about');
+    Route::get('/', [FrontendController::class, 'home'])->name('home')->middleware(EnsureNavigationItemIsEnabled::class.':home');
+    Route::get('/about', [FrontendController::class, 'about'])->name('about')->middleware(EnsureNavigationItemIsEnabled::class.':about');
 
-    Route::get('/services', [FrontendController::class, 'services'])->name('services.index');
-    Route::get('/services/{slug}', [FrontendController::class, 'serviceDetail'])->name('services.show');
+    Route::get('/services', [FrontendController::class, 'services'])->name('services.index')->middleware(EnsureNavigationItemIsEnabled::class.':services');
+    Route::get('/services/{slug}', [FrontendController::class, 'serviceDetail'])->name('services.show')->middleware(EnsureNavigationItemIsEnabled::class.':services');
 
-    Route::get('/products', [FrontendController::class, 'products'])->name('products.index');
-    Route::get('/products/{slug}', [FrontendController::class, 'productDetail'])->name('products.show');
+    Route::get('/products', [FrontendController::class, 'products'])->name('products.index')->middleware(EnsureNavigationItemIsEnabled::class.':products');
+    Route::get('/products/{slug}', [FrontendController::class, 'productDetail'])->name('products.show')->middleware(EnsureNavigationItemIsEnabled::class.':products');
 
-    Route::get('/portfolio', [FrontendController::class, 'portfolio'])->name('portfolio.index');
-    Route::get('/portfolio/{slug}', [FrontendController::class, 'portfolioDetail'])->name('portfolio.show');
+    Route::get('/portfolio', [FrontendController::class, 'portfolio'])->name('portfolio.index')->middleware(EnsureNavigationItemIsEnabled::class.':portfolio');
+    Route::get('/portfolio/{slug}', [FrontendController::class, 'portfolioDetail'])->name('portfolio.show')->middleware(EnsureNavigationItemIsEnabled::class.':portfolio');
 
-    Route::get('/industries', [FrontendController::class, 'industries'])->name('industries.index');
-    Route::get('/managed-it', [FrontendController::class, 'managedIt'])->name('managed-it');
+    Route::get('/industries', [FrontendController::class, 'industries'])->name('industries.index')->middleware(EnsureNavigationItemIsEnabled::class.':industries');
+    Route::get('/managed-it', [FrontendController::class, 'managedIt'])->name('managed-it')->middleware(EnsureNavigationItemIsEnabled::class.':managed_it');
 
-    Route::get('/blog', [FrontendController::class, 'blog'])->name('blog.index');
-    Route::get('/blog/{slug}', [FrontendController::class, 'blogDetail'])->name('blog.show');
+    Route::get('/blog', [FrontendController::class, 'blog'])->name('blog.index')->middleware(EnsureNavigationItemIsEnabled::class.':blog');
+    Route::get('/blog/{slug}', [FrontendController::class, 'blogDetail'])->name('blog.show')->middleware(EnsureNavigationItemIsEnabled::class.':blog');
 
-    Route::get('/contact', [ContactController::class, 'show'])->name('contact');
-    Route::post('/contact', [ContactController::class, 'submit'])->name('contact.submit');
+    Route::get('/contact', [ContactController::class, 'show'])->name('contact')->middleware(EnsureNavigationItemIsEnabled::class.':contact');
+    Route::post('/contact', [ContactController::class, 'submit'])->name('contact.submit')->middleware(EnsureNavigationItemIsEnabled::class.':contact');
 });

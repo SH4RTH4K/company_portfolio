@@ -163,7 +163,7 @@
                         <span class="settings-section-icon"><i class="bi bi-list"></i></span>
                         <div>
                             <h5 class="fw-bold mb-1">Navigation</h5>
-                            <p>Choose which menu items appear in the header, mobile menu, and footer in English and Bangla.</p>
+                            <p>Enable or disable menu items and their pages in English and Bangla.</p>
                         </div>
                     </div>
                     <div class="row g-3">
@@ -179,7 +179,7 @@
                         @endforeach
                     </div>
                     @error('menu_visibility')<div class="text-danger small mt-3">{{ $message }}</div>@enderror
-                    <p class="form-text mb-0 mt-3">Turn off an item to hide its navigation links, then click Save Settings. Pages remain accessible by direct link. Turn it on again to restore it.</p>
+                    <p class="form-text mb-0 mt-3">Turn off an item and click Save Settings to hide its navigation links and block direct access to its pages. Disabled pages return 404 (Page Not Found). Turn it on again to restore access.</p>
                 </section>
 
                 <section id="email-settings" class="settings-section">
