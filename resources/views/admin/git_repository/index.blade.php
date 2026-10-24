@@ -122,8 +122,12 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label" for="deployment-php">Build PHP version</label>
-                                <input class="form-control" id="deployment-php" name="php_version" value="8.4" readonly>
-                                <div class="form-text">Detected on this application: {{ PHP_VERSION }}</div>
+                                <select class="form-select" id="deployment-php" name="php_version">
+                                    @foreach(['8.3', '8.4'] as $phpVersion)
+                                        <option value="{{ $phpVersion }}" @selected(old('php_version', $settings['php_version']) === $phpVersion)>PHP {{ $phpVersion }}</option>
+                                    @endforeach
+                                </select>
+                                <div class="form-text">Choose the PHP version configured for this cPanel domain. Detected here: {{ PHP_VERSION }}.</div>
                             </div>
                             <div class="col-12">
                                 <label class="form-label" for="deployment-token">GitHub Actions API token (ZIP/FTPS only)</label>

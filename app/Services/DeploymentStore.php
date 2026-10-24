@@ -29,6 +29,8 @@ class DeploymentStore
      */
     public function settings(): array
     {
+        $runtimePhpVersion = PHP_MAJOR_VERSION.'.'.PHP_MINOR_VERSION;
+        $defaultPhpVersion = in_array($runtimePhpVersion, ['8.3', '8.4'], true) ? $runtimePhpVersion : '8.4';
         $defaults = [
             'repository' => '',
             'branch' => 'main',
@@ -40,7 +42,7 @@ class DeploymentStore
             'clear_cache' => true,
             'health_check' => true,
             'token' => '',
-            'php_version' => '8.4',
+            'php_version' => $defaultPhpVersion,
             'delivery' => 'git',
             'enabled' => false,
         ];

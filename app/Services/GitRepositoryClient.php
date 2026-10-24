@@ -59,9 +59,9 @@ class GitRepositoryClient
             throw new RuntimeException('Save a GitHub token with Actions read and write permission before starting a build, including for public repositories.');
         }
 
-        if (($settings['php_version'] ?? null) !== '8.4'
+        if (! in_array($settings['php_version'] ?? null, ['8.3', '8.4'], true)
             || ! in_array($settings['delivery'] ?? null, ['zip', 'ftps'], true)) {
-            throw new RuntimeException('Choose PHP 8.4 and a ZIP or FTPS delivery method.');
+            throw new RuntimeException('Choose PHP 8.3 or 8.4 and a ZIP or FTPS delivery method.');
         }
 
         $artifactRunId = $settings['artifact_run_id'] ?? '';

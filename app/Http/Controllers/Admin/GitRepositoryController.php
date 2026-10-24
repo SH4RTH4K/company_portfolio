@@ -122,7 +122,7 @@ class GitRepositoryController extends Controller
             'token' => ['nullable', 'string', 'max:500', 'regex:/\A[A-Za-z0-9_]+\z/'],
             'remove_token' => ['nullable', 'boolean'],
             'enabled' => ['required', 'boolean'],
-            'php_version' => ['required', 'in:8.4'],
+            'php_version' => ['required', 'in:8.3,8.4'],
             'delivery' => ['required', 'in:git,zip,ftps'],
         ]);
 

@@ -173,6 +173,18 @@ class GitRepositoryClientTest extends TestCase
         ]);
     }
 
+    public function test_dispatches_php_8_3_builds_for_cpanel_hosts(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            'https://api.github.com/repos/company/portfolio/actions/workflows/deploy-release.yml/dispatches' => Http::response(['workflow_run_id' => 125]),
+        ]);
+
+        (new GitRepositoryClient)->dispatch($this->settings(['php_version' => '8.3']), self::COMMIT);
+
+        Http::assertSent(fn (Request $request): bool => $request['inputs']['php_version'] === '8.3');
+    }
+
     public function test_requires_token_to_dispatch_public_repository_build(): void
     {
         Http::preventStrayRequests();
@@ -208,7 +220,7 @@ class GitRepositoryClientTest extends TestCase
             'short hash' => [[], '0123456'],
             'branch as hash' => [[], 'main'],
             'unsupported PHP' => [['php_version' => '8.2'], self::COMMIT],
-            'PHP 8.3 dependencies unsupported' => [['php_version' => '8.3'], self::COMMIT],
+            'PHP 8.1 unsupported' => [['php_version' => '8.1'], self::COMMIT],
             'unencrypted FTP' => [['delivery' => 'ftp'], self::COMMIT],
             'token header injection' => [['token' => "github_pat_secret\r\nX-Injected: yes"], self::COMMIT],
             'negative source run ID' => [['delivery' => 'ftps', 'artifact_run_id' => -123], self::COMMIT],

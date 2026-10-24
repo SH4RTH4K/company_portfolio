@@ -95,6 +95,7 @@ class GitRepositoryTest extends TestCase
             'repository_type' => 'private',
             'authentication' => 'pat',
             'credential' => $credential,
+            'php_version' => '8.3',
             'delivery' => 'git',
             'enabled' => false,
             'run_migrations' => false,
@@ -170,6 +171,21 @@ class GitRepositoryTest extends TestCase
         $this->assertSame('attention', $review['status']);
         $this->assertSame([['path' => 'app/Models/User.php', 'status' => 'modified']], $review['changed_files']);
         $this->assertFalse($review['ok']);
+    }
+
+    public function test_reads_php_8_3_release_manifest_on_the_cpanel_runtime(): void
+    {
+        $this->privateStorage();
+        $manifest = $this->manifest(self::COMMIT, str_repeat('a', 64));
+        $manifest['php_version'] = '8.3';
+        Storage::disk('local')->put('installed-manifest.json', json_encode($manifest, JSON_THROW_ON_ERROR));
+        $this->store()->saveSettings($this->settings(['enabled' => false, 'delivery' => 'zip']));
+
+        $this->actingAs(User::factory()->create(['role' => 'super_admin', 'is_active' => true]))
+            ->get(route('admin.git-repository.index'))
+            ->assertViewIs('admin.git_repository.index')
+            ->assertSee(self::COMMIT)
+            ->assertDontSee('The installed deployment manifest is invalid or incomplete.');
     }
 
     public function test_super_admin_can_start_a_confirmed_rollback_from_deployment_history(): void
@@ -389,7 +405,7 @@ class GitRepositoryTest extends TestCase
             'private repository without authentication' => [['repository_type' => 'private', 'authentication' => 'none'], 'authentication', 'Private repositories require an SSH deploy key or personal access token.'],
             'private repository without a credential' => [['repository_type' => 'private', 'authentication' => 'pat'], 'credential', 'A credential is required for a private repository.'],
             'public repository with private authentication' => [['authentication' => 'ssh'], 'authentication', 'Public repositories use None authentication.'],
-            'unsupported hosting PHP' => [['php_version' => '8.3'], 'php_version', 'The selected php version is invalid.'],
+            'unsupported hosting PHP' => [['php_version' => '8.2'], 'php_version', 'The selected php version is invalid.'],
             'unencrypted file delivery' => [['delivery' => 'ftp'], 'delivery', 'The selected delivery is invalid.'],
         ];
     }

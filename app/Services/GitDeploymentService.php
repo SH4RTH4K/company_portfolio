@@ -587,7 +587,7 @@ class GitDeploymentService
 
         if (! is_array($manifest) || ($manifest['version'] ?? null) !== 1
             || ! is_string($manifest['commit'] ?? null) || ! preg_match('/\A[a-f0-9]{40}\z/', $manifest['commit'])
-            || ($manifest['php_version'] ?? '') !== '8.4'
+            || ! in_array($manifest['php_version'] ?? null, ['8.3', '8.4'], true)
             || ! is_array($manifest['required_schema'] ?? null) || ! is_array($manifest['files'] ?? null)
             || $manifest['required_schema'] === [] || $manifest['files'] === []) {
             throw new RuntimeException('The deployment manifest does not contain valid release, schema and file requirements.');
