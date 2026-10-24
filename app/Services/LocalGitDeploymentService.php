@@ -13,6 +13,13 @@ use Throwable;
 
 class LocalGitDeploymentService
 {
+    private const DEPLOYMENT_EXCLUDED_PATH_PREFIXES = [
+        '.agents/',
+        '.claude/',
+        '.github/',
+        'tests/',
+    ];
+
     public function __construct(
         private DeploymentStore $store,
         private DeploymentDatabaseService $database,
@@ -90,6 +97,33 @@ class LocalGitDeploymentService
         ];
     }
 
+    private function isDeployableTrackedChange(string $statusLine): bool
+    {
+        if (str_starts_with($statusLine, '??') || str_starts_with($statusLine, '!!')) {
+            return false;
+        }
+
+        $paths = explode(' -> ', substr($statusLine, 3));
+
+        foreach ($paths as $path) {
+            $isDeploymentExcludedPath = false;
+
+            foreach (self::DEPLOYMENT_EXCLUDED_PATH_PREFIXES as $prefix) {
+                if (str_starts_with($path, $prefix)) {
+                    $isDeploymentExcludedPath = true;
+
+                    break;
+                }
+            }
+
+            if (! $isDeploymentExcludedPath) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /** @param array<string, mixed> $settings */
     private function statusWithoutLock(array $settings): array
     {
@@ -130,7 +164,7 @@ class LocalGitDeploymentService
         $commits = $this->commitList($settings, 'HEAD..'.$remoteBranch);
         $localCommits = $this->commitList($settings, $remoteBranch.'..HEAD');
         $worktreeLines = array_values(array_filter(preg_split('/\R/', trim($this->git($settings, ['status', '--porcelain'])['output'])) ?: []));
-        $trackedChanges = array_values(array_filter($worktreeLines, static fn (string $line): bool => ! str_starts_with($line, '??') && ! str_starts_with($line, '!!')));
+        $trackedChanges = array_values(array_filter($worktreeLines, fn (string $line): bool => $this->isDeployableTrackedChange($line)));
         $localChangesMatchTarget = $trackedChanges !== []
             && $this->git($settings, ['diff', '--quiet', $remoteBranch, '--'], false)['code'] === 0;
         $status = $trackedChanges !== [] && ! $localChangesMatchTarget
