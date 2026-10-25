@@ -421,16 +421,14 @@
                     <a href="{{ route('admin.settings.index') }}" class="nav-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
                         <i class="bi bi-gear me-2"></i> Settings
                     </a>
-                    @if(request()->routeIs('admin.settings.*'))
-                        <div class="sidebar-subnav" aria-label="Settings sections">
-                            @foreach($settingsSections as $settingsSection)
-                                <a href="{{ route('admin.settings.index') }}#{{ $settingsSection['id'] }}" class="sidebar-subnav-link" data-settings-section-link="{{ $settingsSection['id'] }}">
-                                    <i class="bi {{ $settingsSection['icon'] }}"></i>
-                                    <span>{{ $settingsSection['label'] }}</span>
-                                </a>
-                            @endforeach
-                        </div>
-                    @endif
+                    <div class="sidebar-subnav" aria-label="Settings sections">
+                        @foreach($settingsSections as $settingsSection)
+                            <a href="{{ route('admin.settings.index') }}#{{ $settingsSection['id'] }}" class="sidebar-subnav-link" data-settings-section-link="{{ $settingsSection['id'] }}">
+                                <i class="bi {{ $settingsSection['icon'] }}"></i>
+                                <span>{{ $settingsSection['label'] }}</span>
+                            </a>
+                        @endforeach
+                    </div>
                 </li>
             @endif
             <!-- Add other menu items here as needed -->
