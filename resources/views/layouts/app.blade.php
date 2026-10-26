@@ -239,6 +239,14 @@
             color: #fff;
             padding: 90px 0 80px;
         }
+        .hero-banner .homepage-hero-control {
+            width: 4.5rem;
+        }
+        .hero-banner .carousel-indicators [data-bs-target] {
+            border-radius: 999px;
+            height: 0.35rem;
+            width: 2rem;
+        }
         .feature-card {
             border: 1px solid rgba(0,0,0,0.06);
             border-radius: 12px;

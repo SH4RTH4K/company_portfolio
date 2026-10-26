@@ -316,6 +316,7 @@ class DeploymentDatabaseService
             'users' => ['columns' => ['id', 'name', 'email', 'username', 'password', 'role', 'is_active'], 'indexes' => [['email'], ['username']]],
             'roles' => ['columns' => ['id', 'name', 'slug', 'is_active'], 'indexes' => [['slug']]],
             'site_settings' => ['columns' => ['id', 'key', 'value_en', 'value_bn'], 'indexes' => [['key']]],
+            'homepage_heroes' => ['columns' => ['id', 'hero_title_prefix_en', 'hero_title_prefix_bn', 'display_order'], 'indexes' => [['display_order']]],
             'cache' => ['columns' => ['key', 'value', 'expiration'], 'indexes' => [['key']]],
             'cache_locks' => ['columns' => ['key', 'owner', 'expiration'], 'indexes' => [['key']]],
             'system_backups' => ['columns' => ['id', 'filename', 'type', 'status', 'created_by', 'size_bytes', 'error', 'completed_at']],

@@ -1,6 +1,6 @@
 @extends('admin.layouts.admin')
 
-@section('title', 'Homepage Hero')
+@section('title', 'Homepage Hero Slides')
 
 @section('content')
 <style>
@@ -75,168 +75,129 @@
     }
 </style>
 
+@php
+    $slidesForForm = old('slides', $slides);
+    $blankSlide = [
+        'id' => null,
+        'hero_badge_label' => ['en' => 'Zero Gravities', 'bn' => 'জিরো গ্র্যাভিটিস'],
+        'hero_badge_text' => ['en' => 'Technology • Solutions • Commerce', 'bn' => 'প্রযুক্তি • সমাধান • বাণিজ্য'],
+        'hero_title_prefix' => ['en' => 'Technology Without Limits,', 'bn' => 'সীমাহীন প্রযুক্তি,'],
+        'hero_title_accent' => ['en' => 'Built For Growth', 'bn' => 'আধুনিক ব্যবসায়িক সমাধান'],
+        'hero_intro' => ['en' => 'We empower progressive enterprises with intelligent custom software, 24/7 proactive Managed IT & AMC, robust cloud cybersecurity, and enterprise-grade hardware infrastructure.', 'bn' => 'স্মার্ট সফটওয়্যার, নির্ভরযোগ্য আইটি অবকাঠামো, ক্লাউড আর্কিটেকচার এবং ২৪/৭ এন্টারপ্রাইজ সাপোর্ট সার্ভিসের মাধ্যমে আমরা আপনার ব্যবসাকে সামনের দিকে এগিয়ে নিতে কাজ করি।'],
+        'hero_primary_button_label' => ['en' => 'Explore Solutions', 'bn' => 'আমাদের সমাধান দেখুন'],
+        'hero_secondary_button_label' => ['en' => 'Request Consultation', 'bn' => 'সমাধানের জন্য যোগাযোগ'],
+        'hero_card_title' => ['en' => 'Enterprise IT Reliability', 'bn' => '২৪/৭ এন্টারপ্রাইজ সাপোর্ট'],
+        'hero_card_subtitle' => ['en' => '99.9% Uptime Guarantee', 'bn' => '১০০% নিশ্চিত আপটাইম এসএলএ'],
+        'hero_stat_1_value' => ['en' => '15+', 'bn' => '১৫+'],
+        'hero_stat_1_label' => ['en' => 'Years Exp', 'bn' => 'বছরের অভিজ্ঞতা'],
+        'hero_stat_2_value' => ['en' => '200+', 'bn' => '২০০+'],
+        'hero_stat_2_label' => ['en' => 'Clients', 'bn' => 'কর্পোরেট ক্লায়েন্ট'],
+        'hero_stat_3_value' => ['en' => '24/7', 'bn' => '২৪/৭'],
+        'hero_stat_3_label' => ['en' => 'NOC Support', 'bn' => 'সাপোর্ট টিম'],
+    ];
+@endphp
+
 <div class="hero-editor-shell">
-    <form action="{{ route('admin.homepage-hero.update') }}" method="POST">
+    <form action="{{ route('admin.homepage-hero.update') }}" method="POST" id="homepage-hero-form">
         @csrf
 
         <div class="hero-editor-hero mb-4">
             <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
                 <div>
-                    <h4 class="fw-bold mb-1">Homepage Hero</h4>
-                    <p class="mb-0 text-white-50">Control the first-screen headline, intro text, calls to action, reliability card, and metric counters.</p>
+                    <h4 class="fw-bold mb-1">Homepage Hero Slides</h4>
+                    <p class="mb-0 text-white-50">Add, remove, and reorder homepage heroes. With one slide, the homepage stays static; with two or more, the slider starts automatically.</p>
                 </div>
-                <button type="submit" class="btn btn-light fw-semibold align-self-start">
-                    <i class="bi bi-check2-circle me-1"></i> Save Hero
-                </button>
+                <div class="d-flex flex-wrap gap-2 align-self-start">
+                    <button type="button" class="btn btn-outline-light fw-semibold" id="add-hero-slide">
+                        <i class="bi bi-plus-circle me-1"></i> Add Slide
+                    </button>
+                    <button type="submit" class="btn btn-light fw-semibold">
+                        <i class="bi bi-check2-circle me-1"></i> Save Slides
+                    </button>
+                </div>
             </div>
         </div>
 
-        <section class="hero-editor-section">
-            <div class="hero-editor-section-header">
-                <span class="hero-editor-section-icon"><i class="bi bi-stars"></i></span>
-                <div>
-                    <h5 class="fw-bold mb-1">Hero Content</h5>
-                    <p>Manage the text shown in the public homepage hero area.</p>
-                </div>
-            </div>
+        @if($errors->has('slides'))
+            <div class="alert alert-danger">{{ $errors->first('slides') }}</div>
+        @endif
 
-            <div class="hero-editor-subhead">Badge & Headline</div>
-            <div class="row g-3 mb-3">
-                <div class="col-md-3">
-                    <label class="form-label">Badge Label (EN)</label>
-                    <input type="text" name="hero_badge_label[en]" class="form-control @error('hero_badge_label.en') is-invalid @enderror" value="{{ old('hero_badge_label.en', $settings['hero_badge_label'] ?? 'Zero Gravities') }}" maxlength="60">
-                    @error('hero_badge_label.en')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Badge Label (BN)</label>
-                    <input type="text" name="hero_badge_label[bn]" class="form-control @error('hero_badge_label.bn') is-invalid @enderror" value="{{ old('hero_badge_label.bn', $settingsBn['hero_badge_label'] ?? '') }}" maxlength="60">
-                    @error('hero_badge_label.bn')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Badge Text (EN)</label>
-                    <input type="text" name="hero_badge_text[en]" class="form-control @error('hero_badge_text.en') is-invalid @enderror" value="{{ old('hero_badge_text.en', $settings['hero_badge_text'] ?? 'Technology • Solutions • Commerce') }}" maxlength="120">
-                    @error('hero_badge_text.en')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Badge Text (BN)</label>
-                    <input type="text" name="hero_badge_text[bn]" class="form-control @error('hero_badge_text.bn') is-invalid @enderror" value="{{ old('hero_badge_text.bn', $settingsBn['hero_badge_text'] ?? '') }}" maxlength="120">
-                    @error('hero_badge_text.bn')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Headline Main (EN)</label>
-                    <input type="text" name="hero_title_prefix[en]" class="form-control @error('hero_title_prefix.en') is-invalid @enderror" value="{{ old('hero_title_prefix.en', $settings['hero_title_prefix'] ?? 'Technology Without Limits,') }}" maxlength="120">
-                    @error('hero_title_prefix.en')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Headline Main (BN)</label>
-                    <input type="text" name="hero_title_prefix[bn]" class="form-control @error('hero_title_prefix.bn') is-invalid @enderror" value="{{ old('hero_title_prefix.bn', $settingsBn['hero_title_prefix'] ?? '') }}" maxlength="120">
-                    @error('hero_title_prefix.bn')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Headline Accent (EN)</label>
-                    <input type="text" name="hero_title_accent[en]" class="form-control @error('hero_title_accent.en') is-invalid @enderror" value="{{ old('hero_title_accent.en', $settings['hero_title_accent'] ?? 'Built For Growth') }}" maxlength="120">
-                    @error('hero_title_accent.en')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Headline Accent (BN)</label>
-                    <input type="text" name="hero_title_accent[bn]" class="form-control @error('hero_title_accent.bn') is-invalid @enderror" value="{{ old('hero_title_accent.bn', $settingsBn['hero_title_accent'] ?? '') }}" maxlength="120">
-                    @error('hero_title_accent.bn')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Intro Text (EN)</label>
-                    <textarea name="hero_intro[en]" class="form-control @error('hero_intro.en') is-invalid @enderror" rows="4" maxlength="600">{{ old('hero_intro.en', $settings['hero_intro'] ?? 'We empower progressive enterprises with intelligent custom software, 24/7 proactive Managed IT & AMC, robust cloud cybersecurity, and enterprise-grade hardware infrastructure.') }}</textarea>
-                    @error('hero_intro.en')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Intro Text (BN)</label>
-                    <textarea name="hero_intro[bn]" class="form-control @error('hero_intro.bn') is-invalid @enderror" rows="4" maxlength="600">{{ old('hero_intro.bn', $settingsBn['hero_intro'] ?? '') }}</textarea>
-                    @error('hero_intro.bn')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-            </div>
-
-            <div class="hero-editor-subhead">Buttons & Reliability Card</div>
-            <div class="row g-3 mb-3">
-                <div class="col-md-3">
-                    <label class="form-label">Primary Button (EN)</label>
-                    <input type="text" name="hero_primary_button_label[en]" class="form-control @error('hero_primary_button_label.en') is-invalid @enderror" value="{{ old('hero_primary_button_label.en', $settings['hero_primary_button_label'] ?? 'Explore Solutions') }}" maxlength="60">
-                    @error('hero_primary_button_label.en')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Primary Button (BN)</label>
-                    <input type="text" name="hero_primary_button_label[bn]" class="form-control @error('hero_primary_button_label.bn') is-invalid @enderror" value="{{ old('hero_primary_button_label.bn', $settingsBn['hero_primary_button_label'] ?? '') }}" maxlength="60">
-                    @error('hero_primary_button_label.bn')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Secondary Button (EN)</label>
-                    <input type="text" name="hero_secondary_button_label[en]" class="form-control @error('hero_secondary_button_label.en') is-invalid @enderror" value="{{ old('hero_secondary_button_label.en', $settings['hero_secondary_button_label'] ?? 'Request Consultation') }}" maxlength="60">
-                    @error('hero_secondary_button_label.en')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Secondary Button (BN)</label>
-                    <input type="text" name="hero_secondary_button_label[bn]" class="form-control @error('hero_secondary_button_label.bn') is-invalid @enderror" value="{{ old('hero_secondary_button_label.bn', $settingsBn['hero_secondary_button_label'] ?? '') }}" maxlength="60">
-                    @error('hero_secondary_button_label.bn')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Card Title (EN)</label>
-                    <input type="text" name="hero_card_title[en]" class="form-control @error('hero_card_title.en') is-invalid @enderror" value="{{ old('hero_card_title.en', $settings['hero_card_title'] ?? 'Enterprise IT Reliability') }}" maxlength="120">
-                    @error('hero_card_title.en')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Card Title (BN)</label>
-                    <input type="text" name="hero_card_title[bn]" class="form-control @error('hero_card_title.bn') is-invalid @enderror" value="{{ old('hero_card_title.bn', $settingsBn['hero_card_title'] ?? '') }}" maxlength="120">
-                    @error('hero_card_title.bn')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Card Subtitle (EN)</label>
-                    <input type="text" name="hero_card_subtitle[en]" class="form-control @error('hero_card_subtitle.en') is-invalid @enderror" value="{{ old('hero_card_subtitle.en', $settings['hero_card_subtitle'] ?? '99.9% Uptime Guarantee') }}" maxlength="160">
-                    @error('hero_card_subtitle.en')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Card Subtitle (BN)</label>
-                    <input type="text" name="hero_card_subtitle[bn]" class="form-control @error('hero_card_subtitle.bn') is-invalid @enderror" value="{{ old('hero_card_subtitle.bn', $settingsBn['hero_card_subtitle'] ?? '') }}" maxlength="160">
-                    @error('hero_card_subtitle.bn')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-            </div>
-
-            <div class="hero-editor-subhead">Metric Counters</div>
-            <div class="row g-3">
-                @foreach([1, 2, 3] as $statNumber)
-                    @php
-                        $defaultStatValues = [1 => '15+', 2 => '200+', 3 => '24/7'];
-                        $defaultStatLabels = [1 => 'Years Exp', 2 => 'Clients', 3 => 'NOC Support'];
-                        $valueKey = 'hero_stat_'.$statNumber.'_value';
-                        $labelKey = 'hero_stat_'.$statNumber.'_label';
-                    @endphp
-                    <div class="col-lg-4">
-                        <div class="border rounded-3 p-3 h-100">
-                            <div class="fw-semibold mb-3">Metric {{ $statNumber }}</div>
-                            <label class="form-label small">Value (EN)</label>
-                            <input type="text" name="{{ $valueKey }}[en]" class="form-control mb-2 @error($valueKey.'.en') is-invalid @enderror" value="{{ old($valueKey.'.en', $settings[$valueKey] ?? $defaultStatValues[$statNumber]) }}" maxlength="30">
-                            @error($valueKey.'.en')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                            <label class="form-label small">Value (BN)</label>
-                            <input type="text" name="{{ $valueKey }}[bn]" class="form-control mb-2 @error($valueKey.'.bn') is-invalid @enderror" value="{{ old($valueKey.'.bn', $settingsBn[$valueKey] ?? '') }}" maxlength="30">
-                            @error($valueKey.'.bn')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                            <label class="form-label small">Label (EN)</label>
-                            <input type="text" name="{{ $labelKey }}[en]" class="form-control mb-2 @error($labelKey.'.en') is-invalid @enderror" value="{{ old($labelKey.'.en', $settings[$labelKey] ?? $defaultStatLabels[$statNumber]) }}" maxlength="60">
-                            @error($labelKey.'.en')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                            <label class="form-label small">Label (BN)</label>
-                            <input type="text" name="{{ $labelKey }}[bn]" class="form-control @error($labelKey.'.bn') is-invalid @enderror" value="{{ old($labelKey.'.bn', $settingsBn[$labelKey] ?? '') }}" maxlength="60">
-                            @error($labelKey.'.bn')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-        </section>
+        <div id="hero-slides">
+            @foreach($slidesForForm as $index => $slide)
+                @include('admin.homepage_hero._slide', ['index' => $index, 'slide' => $slide])
+            @endforeach
+        </div>
 
         <div class="hero-editor-savebar">
             <div>
-                <div class="fw-bold">Ready to update the homepage hero?</div>
-                <div class="small text-muted">This saves only the Homepage Hero content.</div>
+                <div class="fw-bold">Ready to update the homepage heroes?</div>
+                <div class="small text-muted">Slide order here is the order visitors will see.</div>
             </div>
             <button type="submit" class="btn btn-primary">
-                <i class="bi bi-check2-circle me-1"></i> Save Hero
+                <i class="bi bi-check2-circle me-1"></i> Save Slides
             </button>
         </div>
     </form>
 </div>
+
+<template id="hero-slide-template">
+    @include('admin.homepage_hero._slide', ['index' => '__INDEX__', 'slide' => $blankSlide])
+</template>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const slidesContainer = document.getElementById('hero-slides');
+        const slideTemplate = document.getElementById('hero-slide-template');
+        const addSlideButton = document.getElementById('add-hero-slide');
+
+        const refreshSlides = () => {
+            const slides = Array.from(slidesContainer.querySelectorAll('[data-hero-slide]'));
+
+            slides.forEach((slide, index) => {
+                slide.querySelector('[data-slide-number]').textContent = index + 1;
+                slide.querySelectorAll('[name]').forEach((field) => {
+                    field.name = field.name.replace(/slides\[[^\]]+\]/, `slides[${index}]`);
+                });
+
+                slide.querySelector('[data-move-slide="up"]').disabled = index === 0;
+                slide.querySelector('[data-move-slide="down"]').disabled = index === slides.length - 1;
+                slide.querySelector('[data-remove-slide]').disabled = slides.length === 1;
+            });
+
+            addSlideButton.disabled = slides.length >= 10;
+        };
+
+        addSlideButton.addEventListener('click', () => {
+            const index = slidesContainer.querySelectorAll('[data-hero-slide]').length;
+            slidesContainer.insertAdjacentHTML('beforeend', slideTemplate.innerHTML.replaceAll('__INDEX__', index));
+            refreshSlides();
+        });
+
+        slidesContainer.addEventListener('click', (event) => {
+            const removeButton = event.target.closest('[data-remove-slide]');
+            const moveButton = event.target.closest('[data-move-slide]');
+            const slide = event.target.closest('[data-hero-slide]');
+
+            if (! slide) {
+                return;
+            }
+
+            if (removeButton && slidesContainer.querySelectorAll('[data-hero-slide]').length > 1) {
+                slide.remove();
+            }
+
+            if (moveButton?.dataset.moveSlide === 'up' && slide.previousElementSibling) {
+                slidesContainer.insertBefore(slide, slide.previousElementSibling);
+            }
+
+            if (moveButton?.dataset.moveSlide === 'down' && slide.nextElementSibling) {
+                slidesContainer.insertBefore(slide.nextElementSibling, slide);
+            }
+
+            refreshSlides();
+        });
+
+        refreshSlides();
+    });
+</script>
 @endsection

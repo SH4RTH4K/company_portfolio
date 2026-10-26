@@ -6,6 +6,7 @@ use App\Models\AmcPackage;
 use App\Models\BusinessDivision;
 use App\Models\Client;
 use App\Models\Faq;
+use App\Models\HomepageHero;
 use App\Models\Industry;
 use App\Models\Partner;
 use App\Models\Portfolio;
@@ -36,6 +37,7 @@ class FrontendController extends Controller
     {
         $locale = $this->setLocale($locale);
 
+        $homepageHeroes = HomepageHero::query()->ordered()->get();
         $divisions = BusinessDivision::where('is_active', true)->orderBy('display_order')->get();
         $featuredServices = Service::where('status', 'published')->where('is_active', true)->where('is_featured', true)->orderBy('display_order')->take(6)->get();
         $featuredProducts = Product::where('is_active', true)->where('is_featured', true)->with(['category', 'brand'])->orderBy('display_order')->take(4)->get();
@@ -47,7 +49,7 @@ class FrontendController extends Controller
         $latestPosts = Post::where('status', 'published')->with('category')->orderBy('published_at', 'desc')->take(3)->get();
 
         return view('frontend.home', compact(
-            'locale', 'divisions', 'featuredServices', 'featuredProducts',
+            'locale', 'homepageHeroes', 'divisions', 'featuredServices', 'featuredProducts',
             'featuredPortfolios', 'amcPackages', 'clients', 'testimonials',
             'partners', 'latestPosts'
         ));

@@ -3,97 +3,122 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UpdateHomepageHeroesRequest;
+use App\Models\HomepageHero;
 use App\Models\SiteSetting;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class HomepageHeroController extends Controller
 {
     public function index(): View
     {
-        $settings = $this->defaultEnglishValues();
-        $settingsBn = $this->defaultBengaliValues();
+        $slides = HomepageHero::query()
+            ->ordered()
+            ->get()
+            ->map(fn (HomepageHero $hero): array => $hero->toEditorArray());
 
-        SiteSetting::query()
-            ->get(['key', 'value_en', 'value_bn'])
-            ->each(function (SiteSetting $setting) use (&$settings, &$settingsBn): void {
-                if (filled($setting->value_en)) {
-                    $settings[$setting->key] = $setting->value_en;
-                }
+        if ($slides->isEmpty()) {
+            $slides->push($this->legacySlide());
+        }
 
-                if (filled($setting->value_bn)) {
-                    $settingsBn[$setting->key] = $setting->value_bn;
-                }
-            });
-
-        return view('admin.homepage_hero.index', compact('settings', 'settingsBn'));
+        return view('admin.homepage_hero.index', ['slides' => $slides->all()]);
     }
 
-    public function update(Request $request): RedirectResponse
+    public function update(UpdateHomepageHeroesRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'hero_badge_label.en' => ['nullable', 'string', 'max:60'],
-            'hero_badge_label.bn' => ['nullable', 'string', 'max:60'],
-            'hero_badge_text.en' => ['nullable', 'string', 'max:120'],
-            'hero_badge_text.bn' => ['nullable', 'string', 'max:120'],
-            'hero_title_prefix.en' => ['nullable', 'string', 'max:120'],
-            'hero_title_prefix.bn' => ['nullable', 'string', 'max:120'],
-            'hero_title_accent.en' => ['nullable', 'string', 'max:120'],
-            'hero_title_accent.bn' => ['nullable', 'string', 'max:120'],
-            'hero_intro.en' => ['nullable', 'string', 'max:600'],
-            'hero_intro.bn' => ['nullable', 'string', 'max:600'],
-            'hero_primary_button_label.en' => ['nullable', 'string', 'max:60'],
-            'hero_primary_button_label.bn' => ['nullable', 'string', 'max:60'],
-            'hero_secondary_button_label.en' => ['nullable', 'string', 'max:60'],
-            'hero_secondary_button_label.bn' => ['nullable', 'string', 'max:60'],
-            'hero_card_title.en' => ['nullable', 'string', 'max:120'],
-            'hero_card_title.bn' => ['nullable', 'string', 'max:120'],
-            'hero_card_subtitle.en' => ['nullable', 'string', 'max:160'],
-            'hero_card_subtitle.bn' => ['nullable', 'string', 'max:160'],
-            'hero_stat_1_value.en' => ['nullable', 'string', 'max:30'],
-            'hero_stat_1_value.bn' => ['nullable', 'string', 'max:30'],
-            'hero_stat_1_label.en' => ['nullable', 'string', 'max:60'],
-            'hero_stat_1_label.bn' => ['nullable', 'string', 'max:60'],
-            'hero_stat_2_value.en' => ['nullable', 'string', 'max:30'],
-            'hero_stat_2_value.bn' => ['nullable', 'string', 'max:30'],
-            'hero_stat_2_label.en' => ['nullable', 'string', 'max:60'],
-            'hero_stat_2_label.bn' => ['nullable', 'string', 'max:60'],
-            'hero_stat_3_value.en' => ['nullable', 'string', 'max:30'],
-            'hero_stat_3_value.bn' => ['nullable', 'string', 'max:30'],
-            'hero_stat_3_label.en' => ['nullable', 'string', 'max:60'],
-            'hero_stat_3_label.bn' => ['nullable', 'string', 'max:60'],
-        ]);
+        /** @var list<array<string, mixed>> $slides */
+        $slides = $request->validated('slides');
 
-        $defaultEnglishValues = $this->defaultEnglishValues();
-        $defaultBengaliValues = $this->defaultBengaliValues();
+        DB::transaction(function () use ($slides): void {
+            $retainedHeroIds = [];
 
-        foreach ($validated as $key => $values) {
-            $valueEn = filled($values['en'] ?? null)
-                ? (string) $values['en']
-                : $defaultEnglishValues[$key];
-            $valueBn = filled($values['bn'] ?? null)
-                ? (string) $values['bn']
-                : $defaultBengaliValues[$key];
+            foreach ($slides as $displayOrder => $slide) {
+                $hero = filled($slide['id'] ?? null)
+                    ? HomepageHero::query()->findOrFail((int) $slide['id'])
+                    : new HomepageHero;
 
-            $this->saveSetting($key, $valueEn, $valueBn);
-        }
+                $hero->fill($this->heroAttributes($slide, $displayOrder));
+                $hero->save();
+                $retainedHeroIds[] = $hero->getKey();
+            }
+
+            HomepageHero::query()->whereNotIn('id', $retainedHeroIds)->delete();
+            $this->syncLegacySettings($slides[0]);
+        });
 
         Cache::forget('site_settings');
 
-        return redirect()->back()->with('success', 'Homepage hero updated successfully.');
+        return back()->with('success', 'Homepage hero slides updated successfully.');
     }
 
-    private function saveSetting(string $key, ?string $valueEn, ?string $valueBn = null): void
+    /**
+     * @return array<string, mixed>
+     */
+    private function legacySlide(): array
     {
-        SiteSetting::updateOrCreate(
-            ['key' => $key],
-            [
-                'value_en' => $valueEn,
-                'value_bn' => $valueBn,
-            ]
-        );
+        $settings = SiteSetting::query()
+            ->whereIn('key', HomepageHero::CONTENT_KEYS)
+            ->get(['key', 'value_en', 'value_bn'])
+            ->keyBy('key');
+
+        $slide = ['id' => null];
+        $defaultEnglishValues = $this->defaultEnglishValues();
+        $defaultBengaliValues = $this->defaultBengaliValues();
+
+        foreach (HomepageHero::CONTENT_KEYS as $key) {
+            $setting = $settings->get($key);
+            $slide[$key] = [
+                'en' => filled($setting?->value_en) ? $setting->value_en : $defaultEnglishValues[$key],
+                'bn' => filled($setting?->value_bn) ? $setting->value_bn : $defaultBengaliValues[$key],
+            ];
+        }
+
+        return $slide;
+    }
+
+    /**
+     * @param  array<string, mixed>  $slide
+     * @return array<string, mixed>
+     */
+    private function heroAttributes(array $slide, int $displayOrder): array
+    {
+        $attributes = ['display_order' => $displayOrder];
+        $defaultEnglishValues = $this->defaultEnglishValues();
+        $defaultBengaliValues = $this->defaultBengaliValues();
+
+        foreach (HomepageHero::CONTENT_KEYS as $key) {
+            /** @var array{en?: mixed, bn?: mixed} $translations */
+            $translations = $slide[$key];
+            $attributes[$key.'_en'] = filled($translations['en'] ?? null)
+                ? (string) $translations['en']
+                : $defaultEnglishValues[$key];
+            $attributes[$key.'_bn'] = filled($translations['bn'] ?? null)
+                ? (string) $translations['bn']
+                : $defaultBengaliValues[$key];
+        }
+
+        return $attributes;
+    }
+
+    /**
+     * @param  array<string, mixed>  $slide
+     */
+    private function syncLegacySettings(array $slide): void
+    {
+        $attributes = $this->heroAttributes($slide, 0);
+
+        foreach (HomepageHero::CONTENT_KEYS as $key) {
+            SiteSetting::query()->updateOrCreate(
+                ['key' => $key],
+                [
+                    'value_en' => $attributes[$key.'_en'],
+                    'value_bn' => $attributes[$key.'_bn'],
+                ],
+            );
+        }
     }
 
     /**
