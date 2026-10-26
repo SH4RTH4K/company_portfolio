@@ -4,13 +4,15 @@
     $isBn = app()->getLocale() === 'bn';
     $heroSlides = $homepageHeroes->isNotEmpty() ? $homepageHeroes : collect([null]);
     $hasHeroSlider = $heroSlides->count() > 1;
+    $sliderIntervalSeconds = (int) ($globalSettings['hero_slider_interval_seconds'] ?? 6);
+    $sliderIntervalMilliseconds = min(30, max(3, $sliderIntervalSeconds)) * 1000;
 @endphp
 
 @section('content')
 <!-- 1. HERO SECTION -->
 <section class="hero-banner position-relative">
     @if($hasHeroSlider)
-        <div id="homepageHeroCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="6500">
+        <div id="homepageHeroCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="{{ $sliderIntervalMilliseconds }}">
             <div class="carousel-indicators mb-3">
                 @foreach($heroSlides as $hero)
                     <button type="button" data-bs-target="#homepageHeroCarousel" data-bs-slide-to="{{ $loop->index }}" class="{{ $loop->first ? 'active' : '' }}" aria-current="{{ $loop->first ? 'true' : 'false' }}" aria-label="Hero slide {{ $loop->iteration }}"></button>

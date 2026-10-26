@@ -19,6 +19,7 @@ class HomepageHeroSettingsTest extends TestCase
 
         $this->actingAs($admin)
             ->post(route('admin.homepage-hero.update'), [
+                'slider_interval_seconds' => 8,
                 'slides' => [
                     $this->slidePayload('First Hero', 'প্রথম হিরো'),
                     $this->slidePayload('Second Hero', 'দ্বিতীয় হিরো'),
@@ -36,6 +37,7 @@ class HomepageHeroSettingsTest extends TestCase
         $this->assertSame(1, $heroes[1]->display_order);
         $this->assertSame('First Hero', SiteSetting::where('key', 'hero_title_prefix')->value('value_en'));
         $this->assertSame('প্রথম হিরো', SiteSetting::where('key', 'hero_title_prefix')->value('value_bn'));
+        $this->assertSame('8', SiteSetting::where('key', 'hero_slider_interval_seconds')->value('value_en'));
     }
 
     public function test_blank_homepage_hero_fields_save_default_copy_for_both_languages(): void
@@ -46,7 +48,10 @@ class HomepageHeroSettingsTest extends TestCase
         $slide['hero_primary_button_label'] = ['en' => '', 'bn' => ''];
 
         $this->actingAs($admin)
-            ->post(route('admin.homepage-hero.update'), ['slides' => [$slide]])
+            ->post(route('admin.homepage-hero.update'), [
+                'slider_interval_seconds' => 6,
+                'slides' => [$slide],
+            ])
             ->assertRedirect();
 
         $hero = HomepageHero::query()->sole();
@@ -65,11 +70,17 @@ class HomepageHeroSettingsTest extends TestCase
             'value_en' => 'Existing Hero',
             'value_bn' => 'পুরোনো হিরো',
         ]);
+        SiteSetting::create([
+            'key' => 'hero_slider_interval_seconds',
+            'value_en' => '9',
+        ]);
 
         $this->actingAs($admin)
             ->get(route('admin.homepage-hero.index'))
             ->assertSee('Homepage Hero Slides')
             ->assertSee('Add Slide')
+            ->assertSee('Transition time (seconds)')
+            ->assertSee('value="9"', false)
             ->assertSee('Hero Slide')
             ->assertSee('Existing Hero')
             ->assertSee('পুরোনো হিরো')
@@ -82,11 +93,31 @@ class HomepageHeroSettingsTest extends TestCase
 
         $this->actingAs($admin)
             ->from(route('admin.homepage-hero.index'))
-            ->post(route('admin.homepage-hero.update'), ['slides' => []])
+            ->post(route('admin.homepage-hero.update'), [
+                'slider_interval_seconds' => 6,
+                'slides' => [],
+            ])
             ->assertRedirect(route('admin.homepage-hero.index'))
             ->assertInvalid(['slides' => 'Add at least one homepage hero slide.']);
 
         $this->assertSame(0, HomepageHero::query()->count());
+    }
+
+    public function test_update_rejects_transition_time_below_three_seconds(): void
+    {
+        $admin = User::factory()->create();
+
+        $this->actingAs($admin)
+            ->post(route('admin.homepage-hero.update'), [
+                'slider_interval_seconds' => 2,
+                'slides' => [$this->slidePayload('First Hero', 'প্রথম হিরো')],
+            ])
+            ->assertInvalid([
+                'slider_interval_seconds' => 'Set the slide transition time to at least 3 seconds.',
+            ]);
+
+        $this->assertSame(0, HomepageHero::query()->count());
+        $this->assertNull(SiteSetting::where('key', 'hero_slider_interval_seconds')->value('value_en'));
     }
 
     public function test_homepage_uses_static_markup_when_only_one_hero_exists(): void
@@ -111,12 +142,19 @@ class HomepageHeroSettingsTest extends TestCase
             'hero_title_prefix_en' => 'Second Hero',
             'display_order' => 1,
         ]);
+        SiteSetting::create([
+            'key' => 'hero_slider_interval_seconds',
+            'value_en' => '9',
+        ]);
+
+        Cache::forget('site_settings');
 
         $this->get('/en')
             ->assertSee('First Hero')
             ->assertSee('Second Hero')
             ->assertSee('id="homepageHeroCarousel"', false)
             ->assertSee('data-bs-ride="carousel"', false)
+            ->assertSee('data-bs-interval="9000"', false)
             ->assertSee('data-bs-slide="prev"', false)
             ->assertSee('data-bs-slide="next"', false);
     }

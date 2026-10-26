@@ -24,6 +24,7 @@ class UpdateHomepageHeroesRequest extends FormRequest
     public function rules(): array
     {
         $rules = [
+            'slider_interval_seconds' => ['required', 'integer', 'min:3', 'max:30'],
             'slides' => ['required', 'array', 'list', 'min:1', 'max:10'],
             'slides.*' => ['required', 'array:id,'.implode(',', HomepageHero::CONTENT_KEYS)],
             'slides.*.id' => ['nullable', 'integer', Rule::exists('homepage_heroes', 'id')],
@@ -62,6 +63,10 @@ class UpdateHomepageHeroesRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'slider_interval_seconds.required' => 'Enter the slide transition time in seconds.',
+            'slider_interval_seconds.integer' => 'The slide transition time must be a whole number of seconds.',
+            'slider_interval_seconds.min' => 'Set the slide transition time to at least 3 seconds.',
+            'slider_interval_seconds.max' => 'Set the slide transition time to no more than 30 seconds.',
             'slides.required' => 'Add at least one homepage hero slide.',
             'slides.min' => 'Add at least one homepage hero slide.',
             'slides.max' => 'A maximum of 10 homepage hero slides is allowed.',

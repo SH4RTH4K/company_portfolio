@@ -107,7 +107,22 @@
                     <h4 class="fw-bold mb-1">Homepage Hero Slides</h4>
                     <p class="mb-0 text-white-50">Add, remove, and reorder homepage heroes. With one slide, the homepage stays static; with two or more, the slider starts automatically.</p>
                 </div>
-                <div class="d-flex flex-wrap gap-2 align-self-start">
+                <div class="d-flex flex-wrap align-items-end gap-2 align-self-start">
+                    <div>
+                        <label for="slider_interval_seconds" class="form-label small text-white mb-1">Transition time (seconds)</label>
+                        <input
+                            type="number"
+                            id="slider_interval_seconds"
+                            name="slider_interval_seconds"
+                            class="form-control @error('slider_interval_seconds') is-invalid @enderror"
+                            value="{{ old('slider_interval_seconds', $sliderIntervalSeconds) }}"
+                            min="3"
+                            max="30"
+                            step="1"
+                            required
+                        >
+                        @error('slider_interval_seconds')<div class="invalid-feedback bg-white rounded px-2">{{ $message }}</div>@enderror
+                    </div>
                     <button type="button" class="btn btn-outline-light fw-semibold" id="add-hero-slide">
                         <i class="bi bi-plus-circle me-1"></i> Add Slide
                     </button>

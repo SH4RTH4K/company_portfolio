@@ -24,15 +24,24 @@ class HomepageHeroController extends Controller
             $slides->push($this->legacySlide());
         }
 
-        return view('admin.homepage_hero.index', ['slides' => $slides->all()]);
+        $sliderIntervalSeconds = (int) (SiteSetting::query()
+            ->where('key', 'hero_slider_interval_seconds')
+            ->value('value_en') ?: 6);
+        $sliderIntervalSeconds = min(30, max(3, $sliderIntervalSeconds));
+
+        return view('admin.homepage_hero.index', [
+            'slides' => $slides->all(),
+            'sliderIntervalSeconds' => $sliderIntervalSeconds,
+        ]);
     }
 
     public function update(UpdateHomepageHeroesRequest $request): RedirectResponse
     {
         /** @var list<array<string, mixed>> $slides */
         $slides = $request->validated('slides');
+        $sliderIntervalSeconds = (int) $request->validated('slider_interval_seconds');
 
-        DB::transaction(function () use ($slides): void {
+        DB::transaction(function () use ($slides, $sliderIntervalSeconds): void {
             $retainedHeroIds = [];
 
             foreach ($slides as $displayOrder => $slide) {
@@ -47,6 +56,10 @@ class HomepageHeroController extends Controller
 
             HomepageHero::query()->whereNotIn('id', $retainedHeroIds)->delete();
             $this->syncLegacySettings($slides[0]);
+            SiteSetting::query()->updateOrCreate(
+                ['key' => 'hero_slider_interval_seconds'],
+                ['value_en' => (string) $sliderIntervalSeconds, 'value_bn' => null],
+            );
         });
 
         Cache::forget('site_settings');
